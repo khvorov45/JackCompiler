@@ -11,10 +11,8 @@ the same names but different extensions.
 import sys
 import os
 
-from pprint import pprint
-
 from src.glossary import get_verbosity_indicators
-#from src.jackcompiler import JackCompiler
+from src.jackcompiler import JackCompiler
 
 SOURCE_FOLDER_NAME = "src"
 LEXICON_FOLDER_NAME = "LexicalElements"
@@ -73,14 +71,8 @@ def run_compiler(args):
     lexicon = load_lexicon()
     jack_files = list_jack_files(args[1])
     verbosity = get_verbosity(args)
-    compiler_arguments = {
-        "lexicon" : lexicon,
-        "jack_files" : jack_files,
-        "verbosity" : verbosity
-    }
-    pprint(compiler_arguments)
-    #translation = JackCompiler(compiler_arguments)
-    #translation.run()
+    translation = JackCompiler(lexicon, jack_files, verbosity)
+    translation.run()
 
 if __name__ == "__main__":
     run_compiler(sys.argv)

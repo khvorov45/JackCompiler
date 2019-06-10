@@ -1,26 +1,32 @@
-#--------------------------------------------------------------------------------
-# JackCompiler control class
-#--------------------------------------------------------------------------------
+"""JackCompiler control class
+"""
 
-from JackTokenizer import JackTokenizer
-from CompilationEngine import CompilationEngine
-from glossary import get_full_indicator
-from print_utils import print_padded
+#from JackTokenizer import JackTokenizer
+#from CompilationEngine import CompilationEngine
+#from glossary import get_full_indicator
+#from print_utils import print_padded
 
 class JackCompiler():
-    """ Controls compilation """
-    def __init__(self, args):
-        self.filepaths = args.filepaths
-        self.verbosity = args.verbosity
-    
+    """Controls compilation
+
+    Arguments and attributes:
+        lexicon: a dictionary with keywords and symbols
+        jack_files: a list with filepaths to the .jack files to be compiled
+        verbosity: verbosity of output. "full" or "minimal".
+    """
+    def __init__(self, lexicon, jack_files, verbosity):
+        self.lexicon = lexicon
+        self.jack_files = jack_files
+        self.verbosity = verbosity
+
     def run(self):
         """ Main method to run the compilation process """
-        for filepath in self.filepaths:
-            self.print_start_msg(filepath)
-            
-            out_path = filepath.replace(".jack",".xml")
+        for jack_file in self.jack_files:
+            self.print_start_msg(jack_file)
+
+            out_path = jack_file.replace(".jack", ".xml")
             tokens = JackTokenizer(filepath).contents
-            
+
             if self.verbosity == get_full_indicator():
                 for token in tokens: token.print_message()
             
