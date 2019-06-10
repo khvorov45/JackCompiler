@@ -12,7 +12,7 @@ import sys
 import os
 
 from src.glossary import get_verbosity_indicators
-from src.jackcompiler import JackCompiler
+from src.translation import run_translation
 
 SOURCE_FOLDER_NAME = "src"
 LEXICON_FOLDER_NAME = "LexicalElements"
@@ -71,8 +71,7 @@ def run_compiler(args):
     lexicon = load_lexicon()
     jack_files = list_jack_files(args[1])
     verbosity = get_verbosity(args)
-    translation = JackCompiler(lexicon, jack_files, verbosity)
-    translation.run()
+    run_translation(lexicon, jack_files, verbosity)
 
 if __name__ == "__main__":
     run_compiler(sys.argv)
