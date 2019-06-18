@@ -54,6 +54,20 @@ def unify_strings(token_list):
 
     return tokens_new
 
+def write_tokens(token_list, file_path):
+    """Writes the token list to the specified file"""
+
+    with open(file_path, "w+") as file_opened:
+
+        file_opened.write("<tokens>\n")
+
+        for tok in token_list:
+            file_opened.write("<" + tok.toktype + ">")
+            file_opened.write(" " + str(tok.tokval) + " ")
+            file_opened.write("</" + tok.toktype + ">\n")
+
+        file_opened.write("</tokens>\n")
+
 def run_translation(lexicon, jack_files, verbosity):
     """Controls compilation
 
@@ -67,7 +81,9 @@ def run_translation(lexicon, jack_files, verbosity):
 
     for jack_file in jack_files:
 
-        out_path = jack_file.replace(".jack", ".xml")
+        out_tokens = jack_file.replace(".jack", "")
+        out_tokens = out_tokens + "T.xml"
+        out_main = jack_file.replace(".jack", ".xml")
 
         print_padded("Starting translation of %s" % jack_file)
 
@@ -88,4 +104,8 @@ def run_translation(lexicon, jack_files, verbosity):
             for tok in contents:
                 tok.print_message()
 
-        print_padded("Wrote translation to %s" % out_path)
+        write_tokens(contents, out_tokens)
+
+        print_padded(
+            "Wrote token list to %s \n And main to %s" % (out_tokens, out_main)
+        )

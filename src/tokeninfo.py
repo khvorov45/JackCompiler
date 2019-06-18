@@ -8,15 +8,20 @@ class TokenInfo():
         token: a single element of the .jack file
         lexicon["keywords"]: all the keywords
         lexicon["symbols"]: all the symbols
+    
+    Attributes:
+        token, lexicon as above.
+        toktype: token type (e.g. KEYWORD)
+        tokval: token value (e.g. 'class')
     """
     def __init__(self, token, lexicon):
         self.token = token
         self.lexicon = lexicon
         self.toktype = self.get_type()
         self.tokval = self.token
-        if self.toktype == "INT_CONST":
+        if self.toktype == "intergerConstant":
             self.tokval = int(self.token)
-        if self.toktype == "STRING_CONST":
+        if self.toktype == "stringConstant":
             self.tokval = self.token.replace('"', "")
 
     def print_message(self):
@@ -46,16 +51,16 @@ class TokenInfo():
 
         for keyword in keywords:
             if self.token == keyword:
-                return "KEYWORD"
+                return "keyword"
 
         for symbol in symbols:
             if self.token == symbol:
-                return "SYMBOL"
+                return "symbol"
 
         if self.token.isdigit():
-            return "INT_CONST"
+            return "integerConstant"
 
         if '"' in self.token:
-            return "STRING_CONST"
+            return "stringConstant"
 
-        return "IDENTIFIER"
+        return "identifier"

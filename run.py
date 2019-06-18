@@ -11,12 +11,11 @@ the same names but different extensions.
 import sys
 import os
 
-from src.glossary import get_verbosity_indicators
-from src.translation import run_translation
+from src.glossary import get_verbosity_indicators, JACK_EXT, \
+SOURCE_FOLDER_NAME, LEXICON_FOLDER_NAME
 
-SOURCE_FOLDER_NAME = "src"
-LEXICON_FOLDER_NAME = "LexicalElements"
-JACK_EXT = ".jack"
+from src.translation import run_translation
+from src.utilities import list_files_with_ext
 
 def load_lexicon():
     """Loads the lexical elemets in form of a dictionary"""
@@ -35,23 +34,6 @@ def load_lexicon():
         lexicon[one_file.replace(".txt", "")] = lns
     return lexicon
 
-def list_jack_files(jackdir):
-    """Creates a list of .jack files to be compiled"""
-
-    jackdir = os.path.realpath(jackdir)
-
-    # Only one .jack file
-    if JACK_EXT in jackdir:
-        return [jackdir]
-
-    # Get .jack files in the directory
-    files = os.listdir(jackdir)
-    jack_files = []
-    for filename in files:
-        if JACK_EXT in filename:
-            jack_files.append(os.path.join(jackdir, filename))
-    return jack_files
-
 def get_verbosity(args):
     """Returns the verbosity argument. Default is full."""
 
@@ -69,7 +51,7 @@ def get_verbosity(args):
 def run_compiler(args):
     """Runs the program"""
     lexicon = load_lexicon()
-    jack_files = list_jack_files(args[1])
+    jack_files = list_files_with_ext(args[1], JACK_EXT)
     verbosity = get_verbosity(args)
     run_translation(lexicon, jack_files, verbosity)
 
