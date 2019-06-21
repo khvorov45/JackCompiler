@@ -1,6 +1,8 @@
 """TokenInfo class
 """
 
+from .glossary import SYMBOL_ALIASES
+
 class TokenInfo():
     """Holds all the relevant info on the current command
 
@@ -8,7 +10,7 @@ class TokenInfo():
         token: a single element of the .jack file
         lexicon["keywords"]: all the keywords
         lexicon["symbols"]: all the symbols
-    
+
     Attributes:
         token, lexicon as above.
         toktype: token type (e.g. KEYWORD)
@@ -23,6 +25,10 @@ class TokenInfo():
             self.tokval = int(self.token)
         if self.toktype == "stringConstant":
             self.tokval = self.token.replace('"', "")
+        if self.toktype == "symbol":
+            for symbol, alias in SYMBOL_ALIASES.items():
+                if self.tokval == symbol:
+                    self.tokval = self.tokval.replace(symbol, alias)
 
     def print_message(self):
         """ Prints info on the current command """

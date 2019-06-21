@@ -8,6 +8,10 @@
 class Main {
     static boolean test;    // Added for testing -- there is no static keyword
                             // in the Square files.
+	let test2 = 2 > 5;
+	let test3 = 2 < 5;
+	let test4 = 2 & 5;
+	
 
     function void main() {
         var SquareGame game;
