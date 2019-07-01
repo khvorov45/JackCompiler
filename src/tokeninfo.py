@@ -35,15 +35,15 @@ class TokenInfo():
 
         string = ("Token: {:10} | Type: {:10}".format(
             self.token, self.toktype))
-        if self.toktype == "KEYWORD":
+        if self.toktype == "keyword":
             string += (" | Keyword: {:10}".format(self.tokval))
-        elif self.toktype == "SYMBOL":
+        elif self.toktype == "symbol":
             string += (" | Symbol: {:10}".format(self.tokval))
-        elif self.toktype == "IDENTIFIER":
+        elif self.toktype == "identifier":
             string += (" | Identifier: {:10}".format(self.tokval))
-        elif self.toktype == "INT_CONST":
+        elif self.toktype == "integerConstant":
             string += (" | Value: {:10}".format(str(self.tokval)))
-        elif self.toktype == "STRING_CONST":
+        elif self.toktype == "stringConstant":
             string += (" | Value: {:10}".format(self.tokval))
         else:
             raise Exception("Unexpected type")
