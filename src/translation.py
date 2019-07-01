@@ -11,6 +11,61 @@ def unexpected_token(tok):
     """Raises the unexpected token exception"""
     raise Exception("unexpected token: " + tok.token)
 
+def compile_parameter_list(toks, ind, result, tab_level=1):
+    """Compiles a parameter list (possibly empty)"""
+
+    # First is the opening
+    result += tab_level * TAB_CHAR + build_terminal(toks[ind])
+
+    # Then come the parameters
+    result += tab_level * TAB_CHAR + "<parameterList>\n"
+    cur_ind = ind + 1
+    while True:
+        if toks[cur_ind].token == ")":
+            break
+        result += tab_level * TAB_CHAR + build_terminal(toks[cur_ind])
+        cur_ind += 1
+    result += tab_level * TAB_CHAR + "</parameterList>\n"
+
+    # Finishes with closing the list
+    result += tab_level * TAB_CHAR + build_terminal(toks[cur_ind])
+
+    return [result, cur_ind + 1]
+
+def compile_subroutine(toks, ind, result):
+    """Compiles a subroutine"""
+
+    # First is the opening
+    result += TAB_CHAR + build_terminal(toks[ind])
+
+    # Then is the subroutine type
+    if toks[ind + 1].token not in ["constructor", "function", "method"]:
+        unexpected_token(toks[ind])
+    result += TAB_CHAR + "<subroutineDec>\n"
+    result += 2 * TAB_CHAR + build_terminal(toks[ind + 1])
+
+    # Next is the return type
+    result += 2 * TAB_CHAR + build_terminal(toks[ind + 2])
+
+    # Then is the name
+    result += 2 * TAB_CHAR + build_terminal(toks[ind + 3])
+
+    # Then is the parameter list
+    par_list_comp = compile_parameter_list(toks, ind + 4, result, 2)
+    result = par_list_comp[0]
+    cur_ind = par_list_comp[1]
+
+    # Then is the subroutine body
+    result += 2 * TAB_CHAR + "<subroutineBody>\n"
+
+    # First is the opening
+    result += 3 * TAB_CHAR + build_terminal(toks[cur_ind])
+
+    result += 2 * TAB_CHAR + "</subroutineBody>\n"
+
+    result += TAB_CHAR + "</subroutineDec>\n"
+    return result
+
 def compile_class(toks, out_file_path):
     """Compiles an entire class"""
 
@@ -25,11 +80,10 @@ def compile_class(toks, out_file_path):
         unexpected_token(toks[1])
     result += TAB_CHAR + build_terminal(toks[1])
 
-    # Third token is the opening of the class body
-    if toks[2].toktype != "symbol":
-        unexpected_token(toks[2])
-    result += TAB_CHAR + build_terminal(toks[2])
+    # Then is the class body
+    result = compile_subroutine(toks, 2, result)
 
+    result += "</class>\n"
     # Write to translation file
     out_file = open(out_file_path, "w+")
     out_file.write(result)
