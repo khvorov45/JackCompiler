@@ -12,6 +12,26 @@
     <symbol> ) </symbol>
     <subroutineBody>
       <symbol> { </symbol>
+      <varDec>
+        <keyword> var </keyword>
+        <identifier> Array </identifier>
+        <identifier> a </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> int </keyword>
+        <identifier> length </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> int </keyword>
+        <identifier> i </identifier>
+        <symbol> , </symbol>
+        <identifier> sum </identifier>
+        <symbol> ; </symbol>
+      </varDec>
     </subroutineBody>
   </subroutineDec>
 </class>

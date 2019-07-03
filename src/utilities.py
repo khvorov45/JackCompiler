@@ -3,6 +3,19 @@
 
 import os
 
+def build_terminal(tok):
+    """Builds a terminal statement for xml output"""
+
+    terminal = "<" + tok.toktype + ">" + " " + \
+        str(tok.tokval) + " " + "</" + tok.toktype + ">\n"
+
+    return terminal
+
+class UnexpectedToken(Exception):
+    """Exception raised for unexpected tokens in input"""
+    def __init__(self, tok):
+        super().__init__("unexpected token: " + tok.token)
+
 def list_files_with_ext(jackdir, ext):
     """Creates a list of files with the specified extention"""
 
