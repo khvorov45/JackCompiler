@@ -1,3 +1,3 @@
 @echo off
-python run.py tests/ArrayTest minimal
+python run.py tests minimal
 pause >nul

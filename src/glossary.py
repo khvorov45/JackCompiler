@@ -7,6 +7,7 @@ SOURCE_FOLDER_NAME = "src"
 LEXICON_FOLDER_NAME = "LexicalElements"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
 KEYWORD_CONSTANTS = ["true", "false", "null", "this"]
+UNARY_OP = ["-", "~"]
 
 def is_op(tok):
     """Determines if the token is a an operator"""
@@ -23,7 +24,7 @@ def is_term(tok):
         return True
     if tok.token == "(":
         return True
-    if tok.token == "-":
+    if tok.token in UNARY_OP:
         return True
     return False
 

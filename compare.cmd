@@ -1,3 +1,3 @@
 @echo off
-python compare.py tests/ArrayTest
+python compare.py tests
 pause >nul

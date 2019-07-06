@@ -1,13 +1,17 @@
-"""CompilationEngine class"""
+"""CompilationEngine class.
+Does not have a huge amount of errer checking, will likely only work with
+correctly written .jack classes.
+"""
 
 from .utilities import UnexpectedToken, build_terminal
-from .glossary import is_term, is_op, KEYWORD_CONSTANTS
+from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP
 
 class CompilationEngine():
     """Controls compilation
 
     Arguments:
-        self.toks -- list of tokens (TokenInfo class). Should represent one class.
+        self.toks -- list of tokens (TokenInfo class).
+            Should represent one class.
         out_file_path -- path to the file to write translation to
     """
     def __init__(self, toks, out_file_path):
@@ -33,8 +37,20 @@ class CompilationEngine():
             raise UnexpectedToken(self.toks[self.cur_ind])
         self.create_xml_terminal()
 
-        # Then is the class body
-        self.compile_subroutine()
+        # Opening '{'
+        self.create_xml_terminal()
+
+        # Class variables
+        while self.toks[self.cur_ind].token in ["static", "field"]:
+            self.compile_class_var_dec()
+
+        # Subroutines
+        while self.toks[self.cur_ind].token in \
+            ["constructor", "function", "method"]:
+            self.compile_subroutine()
+
+        # Closing '}'
+        self.create_xml_terminal()
 
         # Finish up the class
         self.result += "</class>\n"
@@ -44,18 +60,38 @@ class CompilationEngine():
         out_file.write(self.result)
         out_file.close()
 
+    def compile_class_var_dec(self):
+        """Compiles class variable declarations"""
+
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<classVarDec>\n"
+        self.tab_level += 1
+
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        while self.toks[self.cur_ind].token == ",":
+            self.create_xml_terminal()
+            self.create_xml_terminal()
+
+        self.create_xml_terminal()
+
+        # Close down
+        self.tab_level -= 1
+        self.result += self.tab_level * self.tab_char + "</classVarDec>\n"
+
     def compile_subroutine(self):
         """Compiles a subroutine"""
 
-        # First is the opening
-        self.create_xml_terminal()
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<subroutineDec>\n"
+        self.tab_level += 1
 
-        # Then is the subroutine type
+        # Subroutine type
         if self.toks[self.cur_ind].token not in \
             ["constructor", "function", "method"]:
             raise UnexpectedToken(self.toks[self.cur_ind])
-        self.result += self.tab_level * self.tab_char + "<subroutineDec>\n"
-        self.tab_level += 1
         self.create_xml_terminal()
 
         # Next is the return type
@@ -80,6 +116,9 @@ class CompilationEngine():
 
         # Then all the statements
         self.compile_statements()
+
+        # Closing '}'
+        self.create_xml_terminal()
 
         # Finish the subroutine
         self.tab_level -= 1
@@ -153,8 +192,25 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "</statements>\n"
 
     def compile_do(self):
-        """Compiles a do statement"""
-        self.cur_ind += 1
+        """Compiles a do statement
+        do subroutineCall ;
+        """
+
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<doStatement>\n"
+        self.tab_level += 1
+
+        while self.toks[self.cur_ind].token != "(":
+            self.create_xml_terminal()
+        self.create_xml_terminal()
+        self.compile_expression_list()
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        # Close down
+        self.tab_level -= 1
+        self.result += self.tab_level * self.tab_char + "</doStatement>\n"
+
 
     def compile_let(self):
         """Compiles a let statement
@@ -187,14 +243,85 @@ class CompilationEngine():
 
 
     def compile_while(self):
-        """Compile a while statement"""
-        self.cur_ind += 1
+        """Compile a while statement
+        while (expr) {statements}
+        """
+
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<whileStatement>\n"
+        self.tab_level += 1
+
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        while is_term(self.toks[self.cur_ind]):
+            self.compile_expression()
+
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        self.compile_statements()
+
+        self.create_xml_terminal()
+
+        # Close down
+        self.tab_level -= 1
+        self.result += self.tab_level * self.tab_char + "</whileStatement>\n"
+
     def compile_return(self):
-        """Compiles a return statement"""
-        self.cur_ind += 1
+        """Compiles a return statement
+        return expression? ;
+        """
+
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<returnStatement>\n"
+        self.tab_level += 1
+
+        self.create_xml_terminal()
+
+        while is_term(self.toks[self.cur_ind]):
+            self.compile_expression()
+
+        self.create_xml_terminal()
+
+        # Close down
+        self.tab_level -= 1
+        self.result += self.tab_level * self.tab_char + "</returnStatement>\n"
+
     def compile_if(self):
-        """Compiles an if statement, possibly trailing else"""
-        self.cur_ind += 1
+        """Compiles an if statement, possibly trailing else
+        if (expr) {statements} else {statements}
+        """
+
+        # Open up
+        self.result += self.tab_level * self.tab_char + "<ifStatement>\n"
+        self.tab_level += 1
+
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        while is_term(self.toks[self.cur_ind]):
+            self.compile_expression()
+
+        self.create_xml_terminal()
+        self.create_xml_terminal()
+
+        self.compile_statements()
+
+        self.create_xml_terminal()
+
+        if self.toks[self.cur_ind].token == "else":
+            self.create_xml_terminal()
+            self.create_xml_terminal()
+
+            self.compile_statements()
+
+            self.create_xml_terminal()
+
+        # Close down
+        self.tab_level -= 1
+        self.result += self.tab_level * self.tab_char + "</ifStatement>\n"
+
     def compile_expression(self):
         """Compiles an expression.
         term (op term)*
@@ -222,14 +349,16 @@ class CompilationEngine():
         self.tab_level += 1
 
         if self.toks[self.cur_ind].toktype in \
-            ["integerConstant", "stringConstant", KEYWORD_CONSTANTS]:
+            ["integerConstant", "stringConstant"]:
             self.create_xml_terminal()
-        elif self.toks[self.cur_ind].toktype == "(":
+        elif self.toks[self.cur_ind].token in KEYWORD_CONSTANTS:
+            self.create_xml_terminal()
+        elif self.toks[self.cur_ind].token == "(":
             self.create_xml_terminal()
             while is_term(self.toks[self.cur_ind]):
                 self.compile_expression()
             self.create_xml_terminal()
-        elif self.toks[self.cur_ind].toktype == "-":
+        elif self.toks[self.cur_ind].token in UNARY_OP:
             self.create_xml_terminal()
             self.compile_term()
         else:
@@ -270,6 +399,8 @@ class CompilationEngine():
 
         while is_term(self.toks[self.cur_ind]):
             self.compile_expression()
+            if self.toks[self.cur_ind].token == ",":
+                self.create_xml_terminal()
 
         # Close down
         self.tab_level -= 1
