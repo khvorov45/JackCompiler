@@ -5,6 +5,7 @@ correctly written .jack classes.
 
 from .utilities import UnexpectedToken, build_terminal
 from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP
+from .symboltable import SymbolTable
 
 class CompilationEngine():
     """Controls compilation
@@ -21,6 +22,7 @@ class CompilationEngine():
         self.tab_char = "  "
         self.tab_level = 1
         self.result = ""
+        self.symbol_table = SymbolTable()
         self.compile_class()
 
     def compile_class(self):
@@ -32,7 +34,7 @@ class CompilationEngine():
         self.result += "<class>\n"
         self.create_xml_terminal()
 
-        # Second token is the class name
+        # Second token is the class name. These do not go into the symbol table.
         if self.toks[self.cur_ind].toktype != "identifier":
             raise UnexpectedToken(self.toks[self.cur_ind])
         self.create_xml_terminal()
@@ -43,6 +45,9 @@ class CompilationEngine():
         # Class variables
         while self.toks[self.cur_ind].token in ["static", "field"]:
             self.compile_class_var_dec()
+
+        # Print the symbol table
+        self.symbol_table.print(sub=False)
 
         # Subroutines
         while self.toks[self.cur_ind].token in \
@@ -67,15 +72,35 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<classVarDec>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        # All of these should be in the symbol table
+
+        # 'static' or 'field'
+        self.create_xml_terminal(increment=False)
+        knd = self.toks[self.cur_ind].token
+        self.cur_ind += 1
+
+        # type
+        self.create_xml_terminal(increment=False)
+        tpe = self.toks[self.cur_ind].token
+        self.cur_ind += 1
+
+        # Identifier
+        self.create_xml_terminal(increment=False)
+        nme = self.toks[self.cur_ind].token
+        self.cur_ind += 1
+
+        self.symbol_table.define(nme, tpe, knd)
 
         while self.toks[self.cur_ind].token == ",":
-            self.create_xml_terminal()
-            self.create_xml_terminal()
+            self.create_xml_terminal() # ,
 
-        self.create_xml_terminal()
+            # Add another variable to the symbol table
+            self.create_xml_terminal(increment=False)
+            nme = self.toks[self.cur_ind].token
+            self.cur_ind += 1
+            self.symbol_table.define(nme, tpe, knd)
+
+        self.create_xml_terminal() # ;
 
         # Close down
         self.tab_level -= 1
@@ -88,6 +113,9 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<subroutineDec>\n"
         self.tab_level += 1
 
+        # Reset the subroutine's symbol table
+        self.symbol_table.start_subroutine()
+
         # Subroutine type
         if self.toks[self.cur_ind].token not in \
             ["constructor", "function", "method"]:
@@ -97,10 +125,11 @@ class CompilationEngine():
         # Next is the return type
         self.create_xml_terminal()
 
-        # Then is the name
+        # Then is the name, not placing this in the symbol table.
         self.create_xml_terminal()
 
-        # Then is the parameter list
+        # Then is the parameter list. 
+        # All arguments should be in the symbol table.
         self.compile_parameter_list()
 
         # Then is the subroutine body
@@ -110,7 +139,7 @@ class CompilationEngine():
         # First is the opening
         self.create_xml_terminal()
 
-        # Then all the variables
+        # Then all the variables. All of these will go into the symbol table.
         while self.toks[self.cur_ind].token == "var":
             self.compile_var_dec()
 
@@ -119,6 +148,9 @@ class CompilationEngine():
 
         # Closing '}'
         self.create_xml_terminal()
+
+        # Print the symbol table
+        self.symbol_table.print(cla=False)
 
         # Finish the subroutine
         self.tab_level -= 1

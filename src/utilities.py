@@ -3,6 +3,18 @@
 
 import os
 
+def two_ent_com(com, seg, ind):
+    """VM push command"""
+    return  com + " " + seg + " " + str(ind)
+
+def count_kind(dic, knd):
+    """Counts elements of the given kind"""
+    cnt = 0
+    for ent in dic.values():
+        if ent.kind == knd:
+            cnt += 1
+    return cnt
+
 def build_terminal(tok):
     """Builds a terminal statement for xml output"""
 
