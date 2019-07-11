@@ -3,8 +3,14 @@
 
 import os
 
-def two_ent_com(com, seg, ind):
-    """VM push command"""
+def find_segment(var_kind):
+    """Returns the VM segment for the given kind"""
+    if var_kind == "var":
+        return "local"
+    return "noidea"
+
+def vmcom(com, seg, ind):
+    """VM two-entry command like 'push local 1'"""
     return  com + " " + seg + " " + str(ind)
 
 def count_kind(dic, knd):

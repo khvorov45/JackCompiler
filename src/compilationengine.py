@@ -3,7 +3,7 @@ Does not have a huge amount of errer checking, will likely only work with
 correctly written .jack classes.
 """
 
-from .utilities import UnexpectedToken, build_terminal
+from .utilities import UnexpectedToken, build_terminal, find_segment
 from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP
 from .symboltable import SymbolTable
 
@@ -15,6 +15,7 @@ class CompilationEngine():
             Should represent one class.
         out_file_path -- path to the file to write translation to
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, toks, out_file_path):
         self.toks = toks
         self.out_file_path = out_file_path
@@ -22,7 +23,9 @@ class CompilationEngine():
         self.tab_char = "  "
         self.tab_level = 1
         self.result = ""
+        self.vmcode = ""
         self.symbol_table = SymbolTable()
+        self.class_name = ""
         self.compile_class()
 
     def compile_class(self):
@@ -37,7 +40,9 @@ class CompilationEngine():
         # Second token is the class name. These do not go into the symbol table.
         if self.toks[self.cur_ind].toktype != "identifier":
             raise UnexpectedToken(self.toks[self.cur_ind])
-        self.create_xml_terminal()
+        self.create_xml_terminal(increment=False)
+        self.class_name = self.toks[self.cur_ind].token
+        self.cur_ind += 1
 
         # Opening '{'
         self.create_xml_terminal()
@@ -47,6 +52,7 @@ class CompilationEngine():
             self.compile_class_var_dec()
 
         # Print the symbol table
+        print(self.class_name + " SYMBOL TABLE")
         self.symbol_table.print(sub=False)
 
         # Subroutines
@@ -60,9 +66,15 @@ class CompilationEngine():
         # Finish up the class
         self.result += "</class>\n"
 
-        # Write to translation file
+        # Write xml to translation file
         out_file = open(self.out_file_path, "w+")
         out_file.write(self.result)
+        out_file.close()
+
+        # Write VM
+        vm_file = self.out_file_path.replace(".xml", ".vm")
+        out_file = open(vm_file, "w+")
+        out_file.write(self.vmcode)
         out_file.close()
 
     def compile_class_var_dec(self):
@@ -84,21 +96,14 @@ class CompilationEngine():
         tpe = self.toks[self.cur_ind].token
         self.cur_ind += 1
 
-        # Identifier
-        self.create_xml_terminal(increment=False)
-        nme = self.toks[self.cur_ind].token
-        self.cur_ind += 1
-
-        self.symbol_table.define(nme, tpe, knd)
-
-        while self.toks[self.cur_ind].token == ",":
-            self.create_xml_terminal() # ,
-
-            # Add another variable to the symbol table
+        # name(s)
+        while self.toks[self.cur_ind].token != ";":
             self.create_xml_terminal(increment=False)
             nme = self.toks[self.cur_ind].token
             self.cur_ind += 1
             self.symbol_table.define(nme, tpe, knd)
+            if self.toks[self.cur_ind].token == ",":
+                self.create_xml_terminal()
 
         self.create_xml_terminal() # ;
 
@@ -117,18 +122,20 @@ class CompilationEngine():
         self.symbol_table.start_subroutine()
 
         # Subroutine type
-        if self.toks[self.cur_ind].token not in \
+        subroutine_type = self.toks[self.cur_ind].token
+        if subroutine_type not in \
             ["constructor", "function", "method"]:
-            raise UnexpectedToken(self.toks[self.cur_ind])
+            raise UnexpectedToken(subroutine_type)
         self.create_xml_terminal()
 
         # Next is the return type
         self.create_xml_terminal()
 
         # Then is the name, not placing this in the symbol table.
+        subroutine_name = self.toks[self.cur_ind].token
         self.create_xml_terminal()
 
-        # Then is the parameter list. 
+        # Then is the parameter list.
         # All arguments should be in the symbol table.
         self.compile_parameter_list()
 
@@ -136,20 +143,28 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<subroutineBody>\n"
         self.tab_level += 1
 
-        # First is the opening
+        # First is the opening '{'
         self.create_xml_terminal()
 
         # Then all the variables. All of these will go into the symbol table.
         while self.toks[self.cur_ind].token == "var":
             self.compile_var_dec()
 
+        # Label the subroutine
+        self.vmcode += "function " + self.class_name + "." + subroutine_name + \
+            " " + str(self.symbol_table.var_count("var")) + "\n"
+
         # Then all the statements
         self.compile_statements()
+
+        # Done with the subroutine
+        self.vmcode += "return\n"
 
         # Closing '}'
         self.create_xml_terminal()
 
         # Print the symbol table
+        print(subroutine_name + " SYMBOL TABLE")
         self.symbol_table.print(cla=False)
 
         # Finish the subroutine
@@ -161,18 +176,32 @@ class CompilationEngine():
     def compile_parameter_list(self):
         """Compiles a parameter list (possibly empty)"""
 
-        # First is the opening
+        # First is the opening '('
         self.create_xml_terminal()
 
-        # Then come the parameters
+        # Open up
         self.result += self.tab_level * self.tab_char + "<parameterList>\n"
         self.tab_level += 1
+
+        # Then come the parameters
         while self.toks[self.cur_ind].token != ")":
-            self.create_xml_terminal()
+            # Type
+            self.create_xml_terminal(increment=False)
+            tpe = self.toks[self.cur_ind].token
+            self.cur_ind += 1
+            # Name
+            self.create_xml_terminal(increment=False)
+            nme = self.toks[self.cur_ind].token
+            self.cur_ind += 1
+            self.symbol_table.define(nme, tpe, "arg")
+            if self.toks[self.cur_ind].token == ",":
+                self.create_xml_terminal()
+
+        # Close down
         self.tab_level -= 1
         self.result += self.tab_level * self.tab_char + "</parameterList>\n"
 
-        # Finishes with closing the list
+        # Finishes with closing ')'
         self.create_xml_terminal()
 
     def compile_var_dec(self):
@@ -184,15 +213,24 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<varDec>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        # var
         self.create_xml_terminal()
 
-        while self.toks[self.cur_ind].token == ",":
-            self.create_xml_terminal()
-            self.create_xml_terminal()
+        # type
+        self.create_xml_terminal(increment=False)
+        tpe = self.toks[self.cur_ind].token
+        self.cur_ind += 1
 
-        self.create_xml_terminal()
+        # name(s)
+        while self.toks[self.cur_ind].token != ";":
+            self.create_xml_terminal(increment=False)
+            nme = self.toks[self.cur_ind].token
+            self.cur_ind += 1
+            self.symbol_table.define(nme, tpe, "var")
+            if self.toks[self.cur_ind].token == ",":
+                self.create_xml_terminal()
+
+        self.create_xml_terminal() # ;
 
         # Close down
         self.tab_level -= 1
@@ -232,12 +270,13 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<doStatement>\n"
         self.tab_level += 1
 
-        while self.toks[self.cur_ind].token != "(":
-            self.create_xml_terminal()
-        self.create_xml_terminal()
-        self.compile_expression_list()
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        self.create_xml_terminal() # do
+
+        self.compile_subroutine_call()
+
+        self.create_xml_terminal() # ;
+
+        self.vmcode += "pop temp 0\n" # Need to ignore void return
 
         # Close down
         self.tab_level -= 1
@@ -253,7 +292,10 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<letStatement>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
+        self.create_xml_terminal() # let
+
+        # variable name
+        var_name = self.toks[self.cur_ind].token
         self.create_xml_terminal()
 
         if self.toks[self.cur_ind].token == "[":
@@ -262,12 +304,17 @@ class CompilationEngine():
                 self.compile_expression()
             self.create_xml_terminal()
 
-        self.create_xml_terminal()
+        self.create_xml_terminal() # =
 
         while is_term(self.toks[self.cur_ind]):
             self.compile_expression()
 
-        self.create_xml_terminal()
+        self.create_xml_terminal() # ;
+
+        # Pop the top of the stack into the appropriate segment
+        seg = find_segment(self.symbol_table.kind_of(var_name))
+        var_ind = self.symbol_table.index_of(var_name)
+        self.vmcode += "pop " + seg + " " + str(var_ind) + "\n"
 
         # Close down
         self.tab_level -= 1
@@ -309,12 +356,18 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<returnStatement>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
+        self.create_xml_terminal() # return
 
+        is_void = True
         while is_term(self.toks[self.cur_ind]):
+            is_void = False
             self.compile_expression()
 
-        self.create_xml_terminal()
+        # Void return
+        if is_void:
+            self.vmcode += "push constant 0\n"
+
+        self.create_xml_terminal() # ;
 
         # Close down
         self.tab_level -= 1
@@ -366,8 +419,14 @@ class CompilationEngine():
         self.compile_term()
 
         while is_op(self.toks[self.cur_ind]):
+            # Operator
+            oper = self.toks[self.cur_ind].token
             self.create_xml_terminal()
             self.compile_term()
+            if oper == "*":
+                self.vmcode += "call Math.multiply 2\n"
+            if oper == "+":
+                self.vmcode += "add\n"
 
         # Close down
         self.tab_level -= 1
@@ -380,19 +439,23 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<term>\n"
         self.tab_level += 1
 
-        if self.toks[self.cur_ind].toktype in \
-            ["integerConstant", "stringConstant"]:
+        if self.toks[self.cur_ind].toktype == "stringConstant":
+            self.create_xml_terminal()
+        elif self.toks[self.cur_ind].toktype == "integerConstant":
+            integ = self.toks[self.cur_ind].token
+            self.vmcode += "push constant " + integ + "\n"
             self.create_xml_terminal()
         elif self.toks[self.cur_ind].token in KEYWORD_CONSTANTS:
             self.create_xml_terminal()
         elif self.toks[self.cur_ind].token == "(":
-            self.create_xml_terminal()
+            self.create_xml_terminal() # (
             while is_term(self.toks[self.cur_ind]):
                 self.compile_expression()
-            self.create_xml_terminal()
+            self.create_xml_terminal() # )
         elif self.toks[self.cur_ind].token in UNARY_OP:
-            self.create_xml_terminal()
+            self.create_xml_terminal() # For the unary operator
             self.compile_term()
+            self.vmcode += "neg\n" # Both - and ~ corrspond to this
         else:
             if self.toks[self.cur_ind].toktype != "identifier":
                 raise UnexpectedToken(self.toks[self.cur_ind])
@@ -402,20 +465,16 @@ class CompilationEngine():
                 while is_term(self.toks[self.cur_ind]):
                     self.compile_expression()
                 self.create_xml_terminal()
-            elif self.toks[self.cur_ind + 1].token == "(":
-                self.create_xml_terminal()
-                self.create_xml_terminal()
-                self.compile_expression_list()
-                self.create_xml_terminal()
-            elif self.toks[self.cur_ind + 1].token == ".":
-                self.create_xml_terminal()
-                self.create_xml_terminal()
-                self.create_xml_terminal()
-                self.create_xml_terminal()
-                self.compile_expression_list()
-                self.create_xml_terminal()
+            elif self.toks[self.cur_ind + 1].token in ["(", "."]:
+                self.compile_subroutine_call()
+
+            # Presumably we found a variable identifier
             else:
+                var_name = self.toks[self.cur_ind].token
                 self.create_xml_terminal()
+                seg = find_segment(self.symbol_table.kind_of(var_name))
+                var_ind = self.symbol_table.index_of(var_name)
+                self.vmcode += "push " + seg + " " + str(var_ind) + "\n"
 
         # Close down
         self.tab_level -= 1
@@ -429,7 +488,9 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<expressionList>\n"
         self.tab_level += 1
 
+        exp_count = 0
         while is_term(self.toks[self.cur_ind]):
+            exp_count += 1
             self.compile_expression()
             if self.toks[self.cur_ind].token == ",":
                 self.create_xml_terminal()
@@ -437,6 +498,32 @@ class CompilationEngine():
         # Close down
         self.tab_level -= 1
         self.result += self.tab_level * self.tab_char + "</expressionList>\n"
+
+        return exp_count
+
+    def compile_subroutine_call(self):
+        """"Compiles a call like
+        ClassName.subName(exprList) or
+        subName(exprList)
+        """
+
+        # Figure out the name of the call
+
+        ## Class (or subroutine) name
+        smth_nme = self.toks[self.cur_ind].token
+        self.create_xml_terminal()
+        ## See if there is a dot
+        if self.toks[self.cur_ind].token == ".":
+            self.create_xml_terminal() # .
+            smth_nme += "." + self.toks[self.cur_ind].token
+            self.create_xml_terminal() # subroutine name
+
+        self.create_xml_terminal() # (
+        exp_n = self.compile_expression_list()
+        self.create_xml_terminal() # )
+
+        # Write the VM code
+        self.vmcode += "call " + smth_nme + " " + str(exp_n) + "\n"
 
     def create_xml_terminal(self, increment=True):
         """Creates a string for xml writing"""

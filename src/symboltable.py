@@ -50,9 +50,9 @@ class SymbolTable:
         """Returns the number of variables of the given kind
         already defined in the current scope.
         """
-        if iden_kind in ["STATIC", "FIELD"]:
+        if iden_kind in ["static", "field"]:
             return count_kind(self.class_scope, iden_kind)
-        if iden_kind in ["ARG", "VAR"]:
+        if iden_kind in ["arg", "var"]:
             return count_kind(self.subroutine_scope, iden_kind)
         raise Exception("unexpected identifier kind: " + iden_kind)
 
