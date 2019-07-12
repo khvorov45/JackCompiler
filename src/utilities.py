@@ -3,20 +3,10 @@
 
 import os
 
-def find_segment(var_kind):
-    """Returns the VM segment for the given kind"""
-    if var_kind == "var":
-        return "local"
-    return "noidea"
-
-def vmcom(com, seg, ind):
-    """VM two-entry command like 'push local 1'"""
-    return  com + " " + seg + " " + str(ind)
-
-def count_kind(dic, knd):
+def count_kind(lis, knd):
     """Counts elements of the given kind"""
     cnt = 0
-    for ent in dic.values():
+    for ent in lis:
         if ent.kind == knd:
             cnt += 1
     return cnt

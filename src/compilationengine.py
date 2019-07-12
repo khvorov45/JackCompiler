@@ -3,8 +3,8 @@ Does not have a huge amount of errer checking, will likely only work with
 correctly written .jack classes.
 """
 
-from .utilities import UnexpectedToken, build_terminal, find_segment
-from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP
+from .utilities import UnexpectedToken, build_terminal
+from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP, OPER, SEGMENT
 from .symboltable import SymbolTable
 
 class CompilationEngine():
@@ -26,6 +26,7 @@ class CompilationEngine():
         self.vmcode = ""
         self.symbol_table = SymbolTable()
         self.class_name = ""
+        self.counts = {"while": 0, "if": 0}
         self.compile_class()
 
     def compile_class(self):
@@ -156,9 +157,6 @@ class CompilationEngine():
 
         # Then all the statements
         self.compile_statements()
-
-        # Done with the subroutine
-        self.vmcode += "return\n"
 
         # Closing '}'
         self.create_xml_terminal()
@@ -312,7 +310,7 @@ class CompilationEngine():
         self.create_xml_terminal() # ;
 
         # Pop the top of the stack into the appropriate segment
-        seg = find_segment(self.symbol_table.kind_of(var_name))
+        seg = SEGMENT[self.symbol_table.kind_of(var_name)]
         var_ind = self.symbol_table.index_of(var_name)
         self.vmcode += "pop " + seg + " " + str(var_ind) + "\n"
 
@@ -326,26 +324,40 @@ class CompilationEngine():
         while (expr) {statements}
         """
 
+        # Remember this index and increment immediately
+        this_ind = self.counts["while"]
+        self.counts["while"] += 1
+
         # Open up
         self.result += self.tab_level * self.tab_char + "<whileStatement>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        # Label the beginning
+        self.vmcode += "label WHILE_EXP" + str(this_ind) + "\n"
 
+        self.create_xml_terminal() # while
+
+        self.create_xml_terminal() # (
         while is_term(self.toks[self.cur_ind]):
             self.compile_expression()
+        self.create_xml_terminal() # )
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        # Check the condition
+        self.vmcode += "not\nif-goto WHILE_END" + str(this_ind) + "\n"
 
+        self.create_xml_terminal() # {
         self.compile_statements()
-
-        self.create_xml_terminal()
+        self.create_xml_terminal() # }
 
         # Close down
         self.tab_level -= 1
         self.result += self.tab_level * self.tab_char + "</whileStatement>\n"
+
+        # Back to the start
+        self.vmcode += "goto WHILE_EXP" + str(this_ind) + "\n"
+
+        # Label the end
+        self.vmcode += "label WHILE_END" + str(this_ind) + "\n"
 
     def compile_return(self):
         """Compiles a return statement
@@ -367,6 +379,8 @@ class CompilationEngine():
         if is_void:
             self.vmcode += "push constant 0\n"
 
+        self.vmcode += "return\n"
+
         self.create_xml_terminal() # ;
 
         # Close down
@@ -378,30 +392,42 @@ class CompilationEngine():
         if (expr) {statements} else {statements}
         """
 
+        # Remember this index and increment immediately
+        this_ind = self.counts["if"]
+        self.counts["if"] += 1
+
         # Open up
         self.result += self.tab_level * self.tab_char + "<ifStatement>\n"
         self.tab_level += 1
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        self.create_xml_terminal() # if
 
+        self.create_xml_terminal() # (
         while is_term(self.toks[self.cur_ind]):
             self.compile_expression()
+        self.create_xml_terminal() # )
 
-        self.create_xml_terminal()
-        self.create_xml_terminal()
+        # Flow control here
+        self.vmcode += "if-goto IF_TRUE" + str(this_ind) + "\n" + \
+            "goto IF_FALSE" + str(this_ind) + "\n" + \
+            "label IF_TRUE" + str(this_ind) + "\n"
 
+        self.create_xml_terminal() # {
         self.compile_statements()
+        self.create_xml_terminal() # }
 
-        self.create_xml_terminal()
+        # More flow control
+        self.vmcode += "goto IF_END" + str(this_ind) + "\n"
+        self.vmcode += "label IF_FALSE" + str(this_ind) + "\n"
 
         if self.toks[self.cur_ind].token == "else":
-            self.create_xml_terminal()
-            self.create_xml_terminal()
-
+            self.create_xml_terminal() # else
+            self.create_xml_terminal() # (
             self.compile_statements()
+            self.create_xml_terminal() # )
 
-            self.create_xml_terminal()
+        # Label the end of the if statement
+        self.vmcode += "label IF_END" + str(this_ind) + "\n"
 
         # Close down
         self.tab_level -= 1
@@ -423,10 +449,7 @@ class CompilationEngine():
             oper = self.toks[self.cur_ind].token
             self.create_xml_terminal()
             self.compile_term()
-            if oper == "*":
-                self.vmcode += "call Math.multiply 2\n"
-            if oper == "+":
-                self.vmcode += "add\n"
+            self.vmcode += OPER[oper]
 
         # Close down
         self.tab_level -= 1
@@ -445,7 +468,8 @@ class CompilationEngine():
             integ = self.toks[self.cur_ind].token
             self.vmcode += "push constant " + integ + "\n"
             self.create_xml_terminal()
-        elif self.toks[self.cur_ind].token in KEYWORD_CONSTANTS:
+        elif self.toks[self.cur_ind].token in KEYWORD_CONSTANTS.keys():
+            self.vmcode += KEYWORD_CONSTANTS[self.toks[self.cur_ind].token]
             self.create_xml_terminal()
         elif self.toks[self.cur_ind].token == "(":
             self.create_xml_terminal() # (
@@ -455,7 +479,7 @@ class CompilationEngine():
         elif self.toks[self.cur_ind].token in UNARY_OP:
             self.create_xml_terminal() # For the unary operator
             self.compile_term()
-            self.vmcode += "neg\n" # Both - and ~ corrspond to this
+            self.vmcode += "not\n" # Both - and ~ corrspond to this
         else:
             if self.toks[self.cur_ind].toktype != "identifier":
                 raise UnexpectedToken(self.toks[self.cur_ind])
@@ -472,7 +496,7 @@ class CompilationEngine():
             else:
                 var_name = self.toks[self.cur_ind].token
                 self.create_xml_terminal()
-                seg = find_segment(self.symbol_table.kind_of(var_name))
+                seg = SEGMENT[self.symbol_table.kind_of(var_name)]
                 var_ind = self.symbol_table.index_of(var_name)
                 self.vmcode += "push " + seg + " " + str(var_ind) + "\n"
 

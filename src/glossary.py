@@ -6,18 +6,31 @@ OUT_EXT = ".xml"
 SOURCE_FOLDER_NAME = "src"
 LEXICON_FOLDER_NAME = "LexicalElements"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
-KEYWORD_CONSTANTS = ["true", "false", "null", "this"]
+KEYWORD_CONSTANTS = {
+    "true" : "push constant 0\nnot\n",
+    "false" : "push constant 0\n",
+    "null": "dontknow",
+    "this": "dontknow"
+}
 UNARY_OP = ["-", "~"]
+OPER = {
+    "+": "add\n", "-" : "sub\n",
+    "*": "call Math.multiply 2\n", "/": "Math.divide 2\n",
+    "&": "and\n", "|": "or\n", "<": "lt\n", ">": "gt\n", "=": "eq\n"
+}
+SEGMENT = {
+    "var": "local", "arg": "argument", "static": "static", "field": "?field?"
+}
 
 def is_op(tok):
     """Determines if the token is a an operator"""
-    if tok.token in ["+", "-", "*", "/", "&", "|", "<", ">", "="]:
+    if tok.token in OPER.keys():
         return True
     return False
 
 def is_term(tok):
     """Determines if the token represents a term"""
-    if tok.token in KEYWORD_CONSTANTS:
+    if tok.token in KEYWORD_CONSTANTS.keys():
         return True
     some_term_types = ["integerConstant", "stringConstant", "identifier"]
     if tok.toktype in some_term_types:

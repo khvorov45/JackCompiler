@@ -5,24 +5,25 @@ from .utilities import count_kind
 class Identifier:
     """Identifier, entry in a symbol table"""
     # pylint: disable=too-few-public-methods
-    def __init__(self, iden_name, iden_type, iden_kind):
+    def __init__(self, iden_name, iden_type, iden_kind, iden_index):
         self.name = iden_name
         self.type = iden_type
         self.kind = iden_kind
+        self.index = iden_index
 
 class SymbolTable:
     """Symbol table"""
     def __init__(self):
-        self.class_scope = {}
+        self.class_scope = []
         self.class_static_ind = 0
         self.class_field_ind = 0
-        self.subroutine_scope = {}
+        self.subroutine_scope = []
         self.subroutine_arg_ind = 0
         self.subroutine_var_ind = 0
 
     def start_subroutine(self):
         """Starts a new subroutine (resets subroutine scope)"""
-        self.subroutine_scope = {}
+        self.subroutine_scope = []
         self.subroutine_arg_ind = 0
         self.subroutine_var_ind = 0
 
@@ -30,18 +31,30 @@ class SymbolTable:
         """Defines a new identifier of a given name, type and kind.
         Assigns it a running index.
         """
-        iden = Identifier(iden_name, iden_type, iden_kind)
-        if iden.kind == "static":
-            self.class_scope.update({self.class_static_ind: iden})
+
+        if iden_kind == "static":
+            iden = Identifier(
+                iden_name, iden_type, iden_kind, self.class_static_ind
+            )
+            self.class_scope.append(iden)
             self.class_static_ind += 1
-        elif iden.kind == "field":
-            self.class_scope.update({self.class_field_ind: iden})
-            self.class_field_ind += 1
-        elif iden.kind == "arg":
-            self.subroutine_scope.update({self.subroutine_arg_ind: iden})
+        elif iden_kind == "field":
+            iden = Identifier(
+                iden_name, iden_type, iden_kind, self.class_field_ind
+            )
+            self.class_scope.append(iden)
+            self.class_static_ind += 1
+        elif iden_kind == "arg":
+            iden = Identifier(
+                iden_name, iden_type, iden_kind, self.subroutine_arg_ind
+            )
+            self.subroutine_scope.append(iden)
             self.subroutine_arg_ind += 1
-        elif iden.kind == "var":
-            self.subroutine_scope.update({self.subroutine_var_ind: iden})
+        elif iden_kind == "var":
+            iden = Identifier(
+                iden_name, iden_type, iden_kind, self.subroutine_var_ind
+            )
+            self.subroutine_scope.append(iden)
             self.subroutine_var_ind += 1
         else:
             raise Exception("unexpected identifier kind: " + iden.kind)
@@ -58,32 +71,32 @@ class SymbolTable:
 
     def kind_of(self, iden_name):
         """Returns the kind of the named identifier in the current scope"""
-        for iden in self.subroutine_scope.values():
+        for iden in self.subroutine_scope:
             if iden.name == iden_name:
                 return iden.kind
-        for iden in self.class_scope.values():
+        for iden in self.class_scope:
             if iden.name == iden_name:
                 return iden.kind
         return "NONE"
 
     def type_of(self, iden_name):
         """Returns the type of the named identifier in the current scope"""
-        for iden in self.subroutine_scope.values():
+        for iden in self.subroutine_scope:
             if iden.name == iden_name:
                 return iden.type
-        for iden in self.class_scope.values():
+        for iden in self.class_scope:
             if iden.name == iden_name:
                 return iden.type
         return "NONE"
 
     def index_of(self, iden_name):
         """Returns the index of the named identifier in the current scope"""
-        for ind, iden in self.subroutine_scope.items():
+        for iden in self.subroutine_scope:
             if iden.name == iden_name:
-                return ind
-        for ind, iden in self.class_scope.items():
+                return iden.index
+        for iden in self.class_scope:
             if iden.name == iden_name:
-                return ind
+                return iden.index
         return "NONE"
 
     def print(self, cla=True, sub=True):
@@ -92,10 +105,14 @@ class SymbolTable:
         top_row = template.format("Name", "Type", "Kind", "#")
         print(top_row)
         if cla:
-            for ind, iden in self.class_scope.items():
-                row = template.format(iden.name, iden.type, iden.kind, ind)
+            for iden in self.class_scope:
+                row = template.format(
+                    iden.name, iden.type, iden.kind, iden.index
+                )
                 print(row)
         if sub:
-            for ind, iden in self.subroutine_scope.items():
-                row = template.format(iden.name, iden.type, iden.kind, ind)
+            for iden in self.subroutine_scope:
+                row = template.format(
+                    iden.name, iden.type, iden.kind, iden.index
+                )
                 print(row)

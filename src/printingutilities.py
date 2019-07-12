@@ -1,7 +1,7 @@
 """Printing utility functions
 """
 
-def print_dotted_line(width=115):
+def print_dotted_line(width=80):
     """Prints a dotted line of the specified width"""
     print("-" * width)
 
