@@ -43,7 +43,7 @@ class SymbolTable:
                 iden_name, iden_type, iden_kind, self.class_field_ind
             )
             self.class_scope.append(iden)
-            self.class_static_ind += 1
+            self.class_field_ind += 1
         elif iden_kind == "arg":
             iden = Identifier(
                 iden_name, iden_type, iden_kind, self.subroutine_arg_ind

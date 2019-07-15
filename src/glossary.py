@@ -1,4 +1,4 @@
-"""Glossary functions. Return strings with defined meanings.
+"""Glossary
 """
 
 JACK_EXT = ".jack"
@@ -9,8 +9,8 @@ SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
 KEYWORD_CONSTANTS = {
     "true" : "push constant 0\nnot\n",
     "false" : "push constant 0\n",
-    "null": "dontknow",
-    "this": "dontknow"
+    "null": "dontknow-null\n",
+    "this": "push pointer 0\n"
 }
 UNARY_OP = ["-", "~"]
 OPER = {
@@ -19,7 +19,7 @@ OPER = {
     "&": "and\n", "|": "or\n", "<": "lt\n", ">": "gt\n", "=": "eq\n"
 }
 SEGMENT = {
-    "var": "local", "arg": "argument", "static": "static", "field": "?field?"
+    "var": "local", "arg": "argument", "static": "static", "field": "this"
 }
 
 def is_op(tok):

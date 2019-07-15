@@ -122,6 +122,10 @@ class CompilationEngine():
         # Reset the subroutine's symbol table
         self.symbol_table.start_subroutine()
 
+        # This reset is unnecessary, it is to conform to ECS's compiler
+        self.counts["while"] = 0
+        self.counts["if"] = 0
+
         # Subroutine type
         subroutine_type = self.toks[self.cur_ind].token
         if subroutine_type not in \
@@ -154,6 +158,14 @@ class CompilationEngine():
         # Label the subroutine
         self.vmcode += "function " + self.class_name + "." + subroutine_name + \
             " " + str(self.symbol_table.var_count("var")) + "\n"
+
+        # Possibly required extra stuff
+        if subroutine_type == "constructor":
+            field_count = self.symbol_table.var_count("field")
+            self.vmcode += "push constant " + str(field_count) + "\n" + \
+                "call Memory.alloc 1\npop pointer 0\n"
+        elif subroutine_type == "method":
+            self.vmcode += "push argument 0\npop pointer 0\n"
 
         # Then all the statements
         self.compile_statements()
@@ -416,18 +428,17 @@ class CompilationEngine():
         self.compile_statements()
         self.create_xml_terminal() # }
 
-        # More flow control
-        self.vmcode += "goto IF_END" + str(this_ind) + "\n"
-        self.vmcode += "label IF_FALSE" + str(this_ind) + "\n"
-
         if self.toks[self.cur_ind].token == "else":
+            self.vmcode += "goto IF_END" + str(this_ind) + "\n"
+            self.vmcode += "label IF_FALSE" + str(this_ind) + "\n"
             self.create_xml_terminal() # else
-            self.create_xml_terminal() # (
+            self.create_xml_terminal() # {
             self.compile_statements()
-            self.create_xml_terminal() # )
+            self.create_xml_terminal() # }
+            self.vmcode += "label IF_END" + str(this_ind) + "\n"
 
-        # Label the end of the if statement
-        self.vmcode += "label IF_END" + str(this_ind) + "\n"
+        else:
+            self.vmcode += "label IF_FALSE" + str(this_ind) + "\n"
 
         # Close down
         self.tab_level -= 1
@@ -535,15 +546,30 @@ class CompilationEngine():
 
         ## Class (or subroutine) name
         smth_nme = self.toks[self.cur_ind].token
+        smth_nme_class = self.resolve_symbol(smth_nme)
+        ## I assume this is how methods work
+        if smth_nme != smth_nme_class:
+            self.vmcode += "push " + \
+                SEGMENT[self.symbol_table.kind_of(smth_nme)] + " " + \
+                str(self.symbol_table.index_of(smth_nme)) + "\n"
+            add_arg = 1
+        else:
+            add_arg = 0
+        smth_nme = smth_nme_class
         self.create_xml_terminal()
         ## See if there is a dot
         if self.toks[self.cur_ind].token == ".":
             self.create_xml_terminal() # .
             smth_nme += "." + self.toks[self.cur_ind].token
             self.create_xml_terminal() # subroutine name
+        ## I guess if there isn't then it's a method
+        else:
+            self.vmcode += "push pointer 0\n"
+            smth_nme = self.class_name + "." + smth_nme
+            add_arg = 1
 
         self.create_xml_terminal() # (
-        exp_n = self.compile_expression_list()
+        exp_n = self.compile_expression_list() + add_arg
         self.create_xml_terminal() # )
 
         # Write the VM code
@@ -555,3 +581,13 @@ class CompilationEngine():
             build_terminal(self.toks[self.cur_ind])
         if increment:
             self.cur_ind += 1
+
+    def resolve_symbol(self, smth_name):
+        """Resolves a symbol (eg. replaces variable name with class name"""
+        for iden in self.symbol_table.subroutine_scope:
+            if iden.name == smth_name:
+                return iden.type
+        for iden in self.symbol_table.class_scope:
+            if iden.name == smth_name:
+                return iden.type
+        return smth_name

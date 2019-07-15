@@ -95,7 +95,7 @@ def compare_2(file1, filename1, file2, filename2):
 
     return result
 
-def compare_files(directory):
+def compare_files_dir(directory):
     """Compares all files in a directory"""
 
     all_jack_files = list_files_with_ext(directory, JACK_EXT)
@@ -140,4 +140,7 @@ def compare_files(directory):
         print(colorama.Fore.GREEN + "None of the main comparisons failed")
 
 if __name__ == "__main__":
-    compare_files(sys.argv[1])
+    if len(sys.argv) == 2:
+        compare_files_dir(sys.argv[1])
+    elif len(sys.argv) == 3:
+        compare_2(sys.argv[1], "file1", sys.argv[2], "file2")
