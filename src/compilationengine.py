@@ -304,15 +304,20 @@ class CompilationEngine():
 
         self.create_xml_terminal() # let
 
-        # variable name
+        # Variable name
         var_name = self.toks[self.cur_ind].token
         self.create_xml_terminal()
 
+        # Array entry
+        is_array_entry = False
         if self.toks[self.cur_ind].token == "[":
-            self.create_xml_terminal()
+            is_array_entry = True
+            self.create_xml_terminal() # [
             while is_term(self.toks[self.cur_ind]):
                 self.compile_expression()
-            self.create_xml_terminal()
+            self.create_xml_terminal() # ]
+            self.push_variable(var_name)
+            self.vmcode += "add\n"
 
         self.create_xml_terminal() # =
 
@@ -322,9 +327,14 @@ class CompilationEngine():
         self.create_xml_terminal() # ;
 
         # Pop the top of the stack into the appropriate segment
-        seg = SEGMENT[self.symbol_table.kind_of(var_name)]
-        var_ind = self.symbol_table.index_of(var_name)
-        self.vmcode += "pop " + seg + " " + str(var_ind) + "\n"
+        if is_array_entry:
+            # Store return, store address of entry, push return and store
+            self.vmcode += \
+                "pop temp 0\npop pointer 1\npush temp 0\npop that 0\n"
+        else:
+            seg = SEGMENT[self.symbol_table.kind_of(var_name)]
+            var_ind = self.symbol_table.index_of(var_name)
+            self.vmcode += "pop " + seg + " " + str(var_ind) + "\n"
 
         # Close down
         self.tab_level -= 1
@@ -473,43 +483,68 @@ class CompilationEngine():
         self.result += self.tab_level * self.tab_char + "<term>\n"
         self.tab_level += 1
 
+        # String
         if self.toks[self.cur_ind].toktype == "stringConstant":
+            stri = self.toks[self.cur_ind].tokval
+            self.vmcode += "push constant " + str(len(stri)) + \
+                "\ncall String.new 1\n"
+            for char in stri:
+                self.vmcode += "push constant " + str(ord(char)) + \
+                    "\ncall String.appendChar 2\n"
             self.create_xml_terminal()
+
+        # Integer
         elif self.toks[self.cur_ind].toktype == "integerConstant":
             integ = self.toks[self.cur_ind].token
             self.vmcode += "push constant " + integ + "\n"
             self.create_xml_terminal()
+
+        # Keyword
         elif self.toks[self.cur_ind].token in KEYWORD_CONSTANTS.keys():
             self.vmcode += KEYWORD_CONSTANTS[self.toks[self.cur_ind].token]
             self.create_xml_terminal()
+
+        # Experssion in brackets
         elif self.toks[self.cur_ind].token == "(":
             self.create_xml_terminal() # (
             while is_term(self.toks[self.cur_ind]):
                 self.compile_expression()
             self.create_xml_terminal() # )
+
+        # Unary operator
         elif self.toks[self.cur_ind].token in UNARY_OP:
             self.create_xml_terminal() # For the unary operator
             self.compile_term()
             self.vmcode += "not\n" # Both - and ~ corrspond to this
+
+        # This has to be an identifier
         else:
             if self.toks[self.cur_ind].toktype != "identifier":
                 raise UnexpectedToken(self.toks[self.cur_ind])
+
+            # Array entry
             if self.toks[self.cur_ind + 1].token == "[":
+
+                # Array name
+                array_name = self.toks[self.cur_ind].token
                 self.create_xml_terminal()
-                self.create_xml_terminal()
+
+                self.create_xml_terminal() # [
                 while is_term(self.toks[self.cur_ind]):
                     self.compile_expression()
-                self.create_xml_terminal()
+                self.create_xml_terminal() # ]
+
+                # Get to the segment's content
+                self.push_variable(array_name)
+                self.vmcode += "add\npop pointer 1\npush that 0\n"
+
+            # Subroutine call
             elif self.toks[self.cur_ind + 1].token in ["(", "."]:
                 self.compile_subroutine_call()
 
             # Presumably we found a variable identifier
             else:
-                var_name = self.toks[self.cur_ind].token
-                self.create_xml_terminal()
-                seg = SEGMENT[self.symbol_table.kind_of(var_name)]
-                var_ind = self.symbol_table.index_of(var_name)
-                self.vmcode += "push " + seg + " " + str(var_ind) + "\n"
+                self.push_variable()
 
         # Close down
         self.tab_level -= 1
@@ -591,3 +626,15 @@ class CompilationEngine():
             if iden.name == smth_name:
                 return iden.type
         return smth_name
+
+    def push_variable(self, var_name=None):
+        """Pushes the variable identiefied onto the stack"""
+        advance = False
+        if var_name is None:
+            var_name = self.toks[self.cur_ind].token
+            advance = True
+        seg = SEGMENT[self.symbol_table.kind_of(var_name)]
+        var_ind = self.symbol_table.index_of(var_name)
+        self.vmcode += "push " + seg + " " + str(var_ind) + "\n"
+        if advance:
+            self.create_xml_terminal()

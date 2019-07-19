@@ -15,11 +15,11 @@ KEYWORD_CONSTANTS = {
 UNARY_OP = ["-", "~"]
 OPER = {
     "+": "add\n", "-" : "sub\n",
-    "*": "call Math.multiply 2\n", "/": "Math.divide 2\n",
+    "*": "call Math.multiply 2\n", "/": "call Math.divide 2\n",
     "&": "and\n", "|": "or\n", "<": "lt\n", ">": "gt\n", "=": "eq\n"
 }
 SEGMENT = {
-    "var": "local", "arg": "argument", "static": "static", "field": "this"
+    "var": "local", "arg": "argument", "static": "?static?", "field": "this"
 }
 
 def is_op(tok):
