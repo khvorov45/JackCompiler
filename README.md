@@ -1,12 +1,12 @@
 # JackCompiler
 
-## Compiler usage:
+## Compiler usage
 
 `python python run.py path/to/jack verbosity`
 
 verbosity: full | minimal
 
-## Comparison usage:
+## Comparison usage
 
 `python compare.py path/to/dir`
 
