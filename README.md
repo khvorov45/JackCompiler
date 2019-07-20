@@ -1,7 +1,17 @@
 # JackCompiler
 
-Finished tokenising. 
+## Compiler usage:
 
-File comparison seems to work like it's supposed to.
+`python python run.py path/to/jack verbosity`
 
-Need to get to recognizing elements (class, expression, etc.). Then onto proper compilation (chapter 11).
+verbosity: full | minimal
+
+## Comparison usage:
+
+`python compare.py path/to/dir`
+
+Will look for token and compare files. For example MainT.xml and MainTCompare.xml
+
+`python compare.py path/to/file1 path/to/file2`
+
+Will compare the two files

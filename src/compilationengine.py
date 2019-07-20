@@ -142,6 +142,8 @@ class CompilationEngine():
 
         # Then is the parameter list.
         # All arguments should be in the symbol table.
+        if subroutine_type == "method":
+            self.symbol_table.subroutine_arg_ind += 1
         self.compile_parameter_list()
 
         # Then is the subroutine body
@@ -196,13 +198,11 @@ class CompilationEngine():
         # Then come the parameters
         while self.toks[self.cur_ind].token != ")":
             # Type
-            self.create_xml_terminal(increment=False)
             tpe = self.toks[self.cur_ind].token
-            self.cur_ind += 1
+            self.create_xml_terminal()
             # Name
-            self.create_xml_terminal(increment=False)
             nme = self.toks[self.cur_ind].token
-            self.cur_ind += 1
+            self.create_xml_terminal()
             self.symbol_table.define(nme, tpe, "arg")
             if self.toks[self.cur_ind].token == ",":
                 self.create_xml_terminal()
@@ -486,6 +486,7 @@ class CompilationEngine():
         # String
         if self.toks[self.cur_ind].toktype == "stringConstant":
             stri = self.toks[self.cur_ind].tokval
+            print(stri)
             self.vmcode += "push constant " + str(len(stri)) + \
                 "\ncall String.new 1\n"
             for char in stri:
@@ -512,10 +513,11 @@ class CompilationEngine():
             self.create_xml_terminal() # )
 
         # Unary operator
-        elif self.toks[self.cur_ind].token in UNARY_OP:
+        elif self.toks[self.cur_ind].token in UNARY_OP.keys():
+            oper = self.toks[self.cur_ind].token
             self.create_xml_terminal() # For the unary operator
             self.compile_term()
-            self.vmcode += "not\n" # Both - and ~ corrspond to this
+            self.vmcode += UNARY_OP[oper]
 
         # This has to be an identifier
         else:

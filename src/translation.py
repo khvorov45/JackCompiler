@@ -6,6 +6,7 @@ from .glossary import get_comment_breaks, get_verbosity_indicators
 from .tokeninfo import TokenInfo
 from .utilities import build_terminal
 from .compilationengine import CompilationEngine
+from .tokeniser import Tokeniser
 
 def remove_comments(file_contents, comment_breaks):
     """Removes all of the comments from a string"""
@@ -92,23 +93,16 @@ def run_translation(lexicon, jack_files, verbosity):
 
         contents = remove_comments(contents, comment_breaks)
 
-        contents = add_whitespaces(contents, lexicon["symbols"])
-
-        contents = contents.split()
-
-        contents = unify_strings(contents)
-
-        # This is where the input is tokenised
-        contents = [TokenInfo(token, lexicon) for token in contents]
+        contents_tokenised = Tokeniser(contents, lexicon).tokens
 
         if verbosity == get_verbosity_indicators()[0]:
-            for tok in contents:
+            for tok in contents_tokenised:
                 tok.print_message()
 
-        write_tokens(contents, out_tokens)
+        write_tokens(contents_tokenised, out_tokens)
 
         # This should be where the input is compiled
-        CompilationEngine(contents, out_main)
+        CompilationEngine(contents_tokenised, out_main)
 
         print_padded(
             "Wrote token list to %s \n And main to %s" % (out_tokens, out_main)

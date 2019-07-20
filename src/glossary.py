@@ -9,17 +9,17 @@ SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
 KEYWORD_CONSTANTS = {
     "true" : "push constant 0\nnot\n",
     "false" : "push constant 0\n",
-    "null": "dontknow-null\n",
+    "null": "push constant 0\n",
     "this": "push pointer 0\n"
 }
-UNARY_OP = ["-", "~"]
+UNARY_OP = {"-": "neg\n", "~": "not\n"}
 OPER = {
     "+": "add\n", "-" : "sub\n",
     "*": "call Math.multiply 2\n", "/": "call Math.divide 2\n",
     "&": "and\n", "|": "or\n", "<": "lt\n", ">": "gt\n", "=": "eq\n"
 }
 SEGMENT = {
-    "var": "local", "arg": "argument", "static": "?static?", "field": "this"
+    "var": "local", "arg": "argument", "static": "static", "field": "this"
 }
 
 def is_op(tok):
@@ -37,7 +37,7 @@ def is_term(tok):
         return True
     if tok.token == "(":
         return True
-    if tok.token in UNARY_OP:
+    if tok.token in UNARY_OP.keys():
         return True
     return False
 
