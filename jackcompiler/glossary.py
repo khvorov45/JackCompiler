@@ -1,10 +1,11 @@
 """Glossary
 """
 
+LEXICON_FOLDER_NAME = "lexicon"
 JACK_EXT = ".jack"
-OUT_EXT = ".xml"
-SOURCE_FOLDER_NAME = "src"
-LEXICON_FOLDER_NAME = "LexicalElements"
+VERBOSITY = ["minimal", "full"]
+OUT_EXT = ".xml" # Syntax analysis output format
+SOURCE_FOLDER_NAME = "jackcompiler"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
 KEYWORD_CONSTANTS = {
     "true" : "push constant 0\nnot\n",

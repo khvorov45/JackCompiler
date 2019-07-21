@@ -3,7 +3,6 @@
 
 from .printingutilities import print_padded
 from .glossary import get_comment_breaks, get_verbosity_indicators
-from .tokeninfo import TokenInfo
 from .utilities import build_terminal
 from .compilationengine import CompilationEngine
 from .tokeniser import Tokeniser
