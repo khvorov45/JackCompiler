@@ -2,8 +2,19 @@
 """
 
 import os
+import colorama
 
-from .glossary import LEXICON_FOLDER_NAME, JACK_EXT, VERBOSITY
+from .glossary import LEXICON_FOLDER_NAME, JACK_EXT
+
+colorama.init(autoreset=True)
+
+def print_yellow(lne):
+    """Prints the given string in yellow"""
+    print(colorama.Fore.YELLOW + lne)
+
+def qte(lne):
+    """Quotes the given string"""
+    return "'" + lne + "'"
 
 def run(args):
     """Runs the compiler

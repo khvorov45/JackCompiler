@@ -1,2 +1,2 @@
 # pylint: disable=missing-docstring
-from .utilities import run
+from .execute import run_cmd

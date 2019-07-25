@@ -3,7 +3,6 @@
 
 LEXICON_FOLDER_NAME = "lexicon"
 JACK_EXT = ".jack"
-VERBOSITY = ["minimal", "full"]
 OUT_EXT = ".xml" # Syntax analysis output format
 SOURCE_FOLDER_NAME = "jackcompiler"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
