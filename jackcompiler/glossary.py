@@ -1,8 +1,13 @@
 """Glossary
 """
 
-LEXICON_FOLDER_NAME = "lexicon"
 JACK_EXT = ".jack"
+DEF_MAX_DEPTH = -1
+VERBOSITY_CHOICES = ["minimal", "full"]
+DEF_VERBOSITY = VERBOSITY_CHOICES[0]
+
+LEXICON_FOLDER_NAME = "lexicon"
+
 OUT_EXT = ".xml" # Syntax analysis output format
 SOURCE_FOLDER_NAME = "jackcompiler"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
