@@ -3,3 +3,4 @@ __pycache__
 *.cmd
 *.bat
 *.sh
+*.ps1

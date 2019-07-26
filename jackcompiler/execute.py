@@ -1,9 +1,10 @@
 """Functions related to executing the compilation from the command line"""
 
+from cmdparserkhv import CmdParser, build_option_entry
+
 from .utilities import list_files_with_ext, pull_option, print_yellow, qte
 from .compiler import JackCompiler
 from .glossary import JACK_EXT, DEF_MAX_DEPTH, DEF_VERBOSITY, VERBOSITY_CHOICES
-from .cmdparser import CmdParser, build_option_entry
 
 def run_cmd(system_arguments):
     """Runs the compiler given system arguments.
