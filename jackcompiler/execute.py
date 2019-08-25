@@ -1,6 +1,6 @@
 """Functions related to executing the compilation from the command line"""
 
-from cmdparserkhv import CmdParser, build_option_entry
+from cmdparserkhv import CmdParser
 
 from .utilities import list_files_with_ext, pull_option, print_yellow, qte
 from .compiler import JackCompiler
@@ -22,16 +22,18 @@ def run_cmd(system_arguments):
 
     # Options
     opt_inds = {
-        "-v": build_option_entry("verbosity", get_verbosity),
-        "-d": build_option_entry("maxdepth", get_maxdepth)
+        "-v": ["verbosity", get_verbosity],
+        "-d": ["max_depth", get_maxdepth]
     }
 
     cmd = CmdParser(system_arguments, opt_inds)
     opts = cmd.get_opts()
-    paths = cmd.get_nonopts()
+    paths = cmd.get_unproc()
 
     print(opts)
     print(paths)
+
+    raise Exception()
 
     # Find all the .jack files
     maxdepth = pull_option(opts, "maxdepth", DEF_MAX_DEPTH)
@@ -52,7 +54,7 @@ def get_verbosity(arg):
             "Verbosity indicator " + qte(arg) + " unrecognised. " + \
             "Using the default value."
         )
-        return None
+        return DEF_VERBOSITY
     return arg
 
 def get_maxdepth(arg):
@@ -64,5 +66,5 @@ def get_maxdepth(arg):
             "Maximum depth value " + qte(arg) + " is not an integer. " + \
             "Using the default value."
         )
-        return None
+        return DEF_MAX_DEPTH
     return arg
