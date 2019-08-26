@@ -2,9 +2,7 @@
 """
 
 JACK_EXT = ".jack"
-DEF_MAX_DEPTH = -1
 VERBOSITY_CHOICES = ["minimal", "full"]
-DEF_VERBOSITY = VERBOSITY_CHOICES[0]
 
 LEXICON_FOLDER_NAME = "lexicon"
 

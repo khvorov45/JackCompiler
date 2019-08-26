@@ -1,5 +1,5 @@
 """CompilationEngine class.
-Does not have a huge amount of errer checking, will likely only work with
+Does not have a huge amount of error checking, will likely only work with
 correctly written .jack classes.
 """
 

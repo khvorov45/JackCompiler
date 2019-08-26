@@ -1,10 +1,10 @@
 """Functions related to executing the compilation from the command line"""
 
-from cmdparserkhv import CmdParser
+from cmdparserkhv import CmdParser, Cmdent
 
-from .utilities import list_files_with_ext, pull_option, print_yellow, qte
+from .utilities import list_files_with_ext
 from .compiler import JackCompiler
-from .glossary import JACK_EXT, DEF_MAX_DEPTH, DEF_VERBOSITY, VERBOSITY_CHOICES
+from .glossary import JACK_EXT, VERBOSITY_CHOICES
 
 def run_cmd(system_arguments):
     """Runs the compiler given system arguments.
@@ -20,51 +20,20 @@ def run_cmd(system_arguments):
         -d: maximum recursion depth for traversing the directory.
     """
 
-    # Options
-    opt_inds = {
-        "-v": ["verbosity", get_verbosity],
-        "-d": ["max_depth", get_maxdepth]
+    opt_dic = {
+        "-v": Cmdent("verbosity", VERBOSITY_CHOICES),
+        "-d": Cmdent("maxdepth", range(-1, 10^6))
     }
 
-    cmd = CmdParser(system_arguments, opt_inds)
+    cmd = CmdParser(system_arguments, opt_dic)
     opts = cmd.get_opts()
     paths = cmd.get_unproc()
 
-    print(opts)
-    print(paths)
-
-    raise Exception()
-
-    # Find all the .jack files
-    maxdepth = pull_option(opts, "maxdepth", DEF_MAX_DEPTH)
     paths = list_files_with_ext(
-        *paths, ext=JACK_EXT, maxdepth=maxdepth
+        *paths, ext=JACK_EXT, maxdepth=opts["maxdepth"]
     )
 
     # Compile each of the found files
-    verbosity = pull_option(opts, "verbosity", DEF_VERBOSITY)
     for path in paths:
-        comp = JackCompiler(path, verbosity)
+        comp = JackCompiler(path, opts["verbosity"])
         comp.run()
-
-def get_verbosity(arg):
-    """Returns the verbosity argument"""
-    if arg not in VERBOSITY_CHOICES:
-        print_yellow(
-            "Verbosity indicator " + qte(arg) + " unrecognised. " + \
-            "Using the default value."
-        )
-        return DEF_VERBOSITY
-    return arg
-
-def get_maxdepth(arg):
-    """Returns the maxdepth argument"""
-    try:
-        arg = int(arg)
-    except ValueError:
-        print_yellow(
-            "Maximum depth value " + qte(arg) + " is not an integer. " + \
-            "Using the default value."
-        )
-        return DEF_MAX_DEPTH
-    return arg
