@@ -26,11 +26,14 @@ def run_cmd(system_arguments):
     }
 
     cmd = CmdParser(system_arguments, opt_dic)
-    opts = cmd.get_opts()
-    paths = cmd.get_unproc()
+    opts = cmd.get_all_options()
+    paths = cmd.get_unrecognised()
+
+    print(paths)
+    print(opts)
 
     paths = list_files_with_ext(
-        *paths, ext=JACK_EXT, maxdepth=opts["maxdepth"]
+        *paths, ext=JACK_EXT, maxdepth=opt_dic["maxdepth"]
     )
 
     # Compile each of the found files
