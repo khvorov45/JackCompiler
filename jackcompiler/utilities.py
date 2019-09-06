@@ -4,17 +4,9 @@
 import os
 import colorama
 
-from .glossary import JACK_EXT, LEXICON_FOLDER_NAME
+from .glossary import LEXICON_FOLDER_NAME
 
 colorama.init(autoreset=True)
-
-def pull_option(dic, itname, itdef):
-    """Pulls an item out of the dictionary"""
-    try:
-        opt = dic[itname]
-    except KeyError:
-        opt = itdef
-    return opt
 
 def list_files_with_ext(*paths, ext, maxdepth=-1):
     """Creates a list of files with the specified extention"""
@@ -113,8 +105,6 @@ def get_src_path(entity_name):
     src_path = os.path.dirname(os.path.realpath(__file__))
     src_path = os.path.join(src_path, entity_name)
     return src_path
-
-
 
 def get_verbosity(verbosity_ind):
     """Returns the verbosity argument. Default is full."""

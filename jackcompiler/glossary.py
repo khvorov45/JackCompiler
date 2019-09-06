@@ -1,7 +1,6 @@
 """Glossary
 """
 
-JACK_EXT = ".jack"
 VERBOSITY_CHOICES = ["minimal", "full"]
 
 LEXICON_FOLDER_NAME = "lexicon"

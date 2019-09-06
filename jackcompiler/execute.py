@@ -4,7 +4,6 @@ from cmdparserkhv import CmdParser, Cmdent
 
 from .utilities import list_files_with_ext
 from .compiler import JackCompiler
-from .glossary import JACK_EXT, VERBOSITY_CHOICES
 
 def run_cmd(system_arguments):
     """Runs the compiler given system arguments.
@@ -21,7 +20,7 @@ def run_cmd(system_arguments):
     """
 
     opt_dic = {
-        "-v": Cmdent("verbosity", VERBOSITY_CHOICES),
+        "-v": Cmdent("verbosity"), # leave to JackCompiler to check correctness
         "-d": Cmdent("maxdepth", range(-1, 10^6))
     }
 
@@ -30,10 +29,12 @@ def run_cmd(system_arguments):
     paths = cmd.get_unrecognised()
 
     paths = list_files_with_ext(
-        *paths, ext=JACK_EXT, maxdepth=opts["maxdepth"]
+        *paths, ext=".jack", maxdepth=opts["maxdepth"]
     )
 
     # Compile each of the found files
+    comp = JackCompiler()
+    comp.verbosity = opts["verbosity"]
     for path in paths:
-        comp = JackCompiler(path, opts["verbosity"])
+        comp.jackpath = path
         comp.run()
