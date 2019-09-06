@@ -19,35 +19,23 @@ class JackCompiler:
         self.verbosity = verbosity
         self.maxdepth = maxdepth
 
-    def set_jackpath(self, path):
-        """Sets the path to the jack file"""
-        self._jackpath = path
-
-    def get_jackpath(self):
-        """Returns the path to the jack file"""
+    @property
+    def jackpath(self):
+        """Path to .jack file"""
         return self._jackpath
 
-    jackpath = property(get_jackpath, set_jackpath)
+    @jackpath.setter
+    def jackpath(self, path):
+        self._jackpath = path
 
-    def set_verbosity(self, opt):
-        """Sets the verbosity option"""
+    @property
+    def verbosity(self):
+        """Verbosity of output"""
+        return self._verbosity
+
+    @verbosity.setter
+    def verbosity(self, opt):
         self._verbosity = opt
-
-    def get_verbosity(self):
-        """Returns the verbosity option"""
-        return self._verbosity
-
-    verbosity = property(get_verbosity, set_verbosity)
-
-    def set_maxdepth(self, opt):
-        """Sets the maxdepth option"""
-        self._maxdepth = opt
-
-    def get_maxdepth(self):
-        """Returns the maxdepth option"""
-        return self._verbosity
-
-    maxdepth = property(get_maxdepth, set_maxdepth)
 
     def _create_def_outdic(self):
         """Creates the dictionary of output files"""
@@ -56,7 +44,15 @@ class JackCompiler:
         outdic["main"] = self.jackpath.replace(".jack", ".xml")
         return outdic
 
+    def _read_file(self):
+        """Returns a single string with all the file contents"""
+        with open(self.jackpath) as jackfile:
+            contents = jackfile.read()
+        return contents
+
     def run(self):
         """Runs the compiler"""
         outdic = self._create_def_outdic()
         print_yellow("Starting translation of %s" % self.jackpath)
+        contents = self._read_file()
+        print(contents)
