@@ -1,12 +1,32 @@
 """Glossary
 """
 
-VERBOSITY_CHOICES = ["minimal", "full"]
+KEYWORDS = [
+    "class",
+    "constructor", "function", "method",
+    "field", "static", "var",
+    "int", "char", "boolean", "void",
+    "true", "false",
+    "null",
+    "this",
+    "let", "do", 
+    "if", "else",
+    "while",
+    "return"
+]
 
-LEXICON_FOLDER_NAME = "lexicon"
+SYMBOLS = [
+    "{", "}",
+    "(", ")",
+    "[", "]",
+    ".", ",", ";",
+    "+", "-", "*", "/",
+    "&", "|",
+    "<", ">",
+    "=", 
+    "~"
+]
 
-OUT_EXT = ".xml" # Syntax analysis output format
-SOURCE_FOLDER_NAME = "jackcompiler"
 SYMBOL_ALIASES = {"<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;"}
 KEYWORD_CONSTANTS = {
     "true" : "push constant 0\nnot\n",

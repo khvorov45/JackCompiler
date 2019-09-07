@@ -1,7 +1,9 @@
 """Top-level compiler control"""
 
 import os
+from pprint import pprint
 from .utilities import print_yellow, print_red
+from .tokeniser import Tokeniser
 
 class JackCompiler:
     """Top-level control class.
@@ -16,6 +18,7 @@ class JackCompiler:
     def __init__(self, jackpath=None, verbosity=None):
         self.jackpath = jackpath
         self.verbosity = verbosity
+        self._tokeniser = Tokeniser()
 
     @property
     def jackpath(self):
@@ -66,4 +69,6 @@ class JackCompiler:
         outdic = self._create_def_outdic()
         print_yellow("Starting translation of %s" % self.jackpath)
         contents = self._read_file()
-        print(contents)
+        self._tokeniser.contents = contents
+        tokens = self._tokeniser.get_tokens()
+        pprint(tokens)

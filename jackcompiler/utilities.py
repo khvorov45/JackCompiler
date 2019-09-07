@@ -4,8 +4,6 @@
 import os
 import colorama
 
-from .glossary import LEXICON_FOLDER_NAME
-
 colorama.init(autoreset=True)
 
 def list_files_with_ext(*paths, ext, maxdepth=-1):
@@ -33,6 +31,19 @@ def list_files_with_ext(*paths, ext, maxdepth=-1):
                 if ext in filename:
                     needed_files.append(os.path.join(root, filename))
     return needed_files
+
+def remove_comments(file_contents, comment_breaks):
+    """Removes all of the comments from a string"""
+    for com_set in comment_breaks:
+        opener = com_set[0]
+        closer = com_set[1]
+        while opener in file_contents:
+            ind_start = file_contents.index(opener)
+            keep_left = file_contents[:ind_start]
+            rest = file_contents[ind_start:]
+            keep_right = rest[rest.index(closer) + len(closer) : ]
+            file_contents = keep_left + keep_right
+    return file_contents
 
 def print_yellow(lne):
     """Prints the given string in yellow"""
