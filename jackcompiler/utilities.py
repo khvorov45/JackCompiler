@@ -6,6 +6,12 @@ import colorama
 
 colorama.init(autoreset=True)
 
+COLOR = {
+    "red": colorama.Fore.RED,
+    "green": colorama.Fore.GREEN,
+    "yellow": colorama.Fore.YELLOW
+}
+
 def list_files_with_ext(*paths, ext, maxdepth=-1):
     """Creates a list of files with the specified extention"""
     needed_files = []
@@ -52,6 +58,17 @@ def print_yellow(lne):
 def print_red(lne):
     """Prints the given string in red"""
     print(colorama.Fore.RED + lne)
+
+def print_green(lne):
+    """Prints the given string in green"""
+    print(colorama.Fore.GREEN + lne)
+
+def build_terminal(tok):
+    """Builds a terminal statement for xml output"""
+    terminal = "<" + tok["type"] + ">" + " " + \
+        str(tok["value"]) + " " + "</" + tok["type"] + ">\n"
+    return terminal
+
 
 def qte(lne):
     """Quotes the given string"""
@@ -132,13 +149,6 @@ def count_kind(lis, knd):
             cnt += 1
     return cnt
 
-def build_terminal(tok):
-    """Builds a terminal statement for xml output"""
-
-    terminal = "<" + tok.toktype + ">" + " " + \
-        str(tok.tokval) + " " + "</" + tok.toktype + ">\n"
-
-    return terminal
 
 class UnexpectedToken(Exception):
     """Exception raised for unexpected tokens in input"""

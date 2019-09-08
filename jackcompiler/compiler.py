@@ -1,8 +1,7 @@
 """Top-level compiler control"""
 
 import os
-from pprint import pprint
-from .utilities import print_yellow, print_red
+from .utilities import COLOR, build_terminal
 from .tokeniser import Tokeniser
 
 class JackCompiler:
@@ -13,11 +12,13 @@ class JackCompiler:
         maxdepth = maximum recursion depth for looking for .jack files
         verbosity = verbosity of output.
     """
-    # pylint: disable=attribute-defined-outside-init
-    # I'm using setters/getters here, those attributes in init would look messy
-    def __init__(self, jackpath=None, verbosity=None):
-        self.jackpath = jackpath
-        self.verbosity = verbosity
+    def __init__(self):
+        self._jackpath = None
+        self._contents = None
+        self._outdic = None
+        self._tokens = None
+        self._verbosity = "minimal"
+        self._outtokens = False
         self._tokeniser = Tokeniser()
 
     @property
@@ -27,12 +28,16 @@ class JackCompiler:
 
     @jackpath.setter
     def jackpath(self, path):
-        if path is None:
-            self._jackpath = None
-            return
         if not os.path.isfile(path):
             raise FileNotFoundError(".jack file not found")
         self._jackpath = path
+        with open(path) as jackfile:
+            self._contents = jackfile.read()
+        self._outdic = {
+            "tokens": path.replace(".jack", "") + "T.xml",
+            "main": path.replace(".jack", ".xml")
+        }
+        self._tokens = None
 
     @property
     def verbosity(self):
@@ -41,34 +46,51 @@ class JackCompiler:
 
     @verbosity.setter
     def verbosity(self, opt):
-        if opt is None:
-            self.verbosity = "minimal"
-            return
         if opt not in ["full", "minimal"]:
             raise ValueError("verbosity should be 'full' or 'minimal'")
         self._verbosity = opt
 
-    def _create_def_outdic(self):
-        """Creates the dictionary of output files"""
-        outdic = {}
-        outdic["tokens"] = self.jackpath.replace(".jack", "") + "T.xml"
-        outdic["main"] = self.jackpath.replace(".jack", ".xml")
-        return outdic
+    @property
+    def outtokens(self):
+        """Whether to output the tokens file"""
+        return self._outtokens
 
-    def _read_file(self):
-        """Returns a single string with all the file contents"""
-        with open(self.jackpath) as jackfile:
-            contents = jackfile.read()
-        return contents
+    @outtokens.setter
+    def outtokens(self, outtokens):
+        if not isinstance(outtokens, bool):
+            raise ValueError("outtokens should be boolean")
+        self._outtokens = outtokens
 
     def run(self):
         """Compiles one .jack file"""
         if self.jackpath is None:
-            print_red("Nothing to compile")
+            print(COLOR["red"] + "Nothing to compile")
             return
-        outdic = self._create_def_outdic()
-        print_yellow("Starting translation of %s" % self.jackpath)
-        contents = self._read_file()
-        self._tokeniser.contents = contents
-        tokens = self._tokeniser.get_tokens()
-        pprint(tokens)
+        print(COLOR["yellow"] + "Compiling %s" % self.jackpath)
+        self._tokenise()
+        self._print_conditional("Tokenised successfully", "green")
+        if self.outtokens:
+            self._print_conditional(
+                "Wrote tokens to " + self._outdic["tokens"],
+                "yellow"
+            )
+            self._write_tokens()
+
+    def _tokenise(self):
+        """Creates tokens"""
+        self._tokeniser.contents = self._contents
+        self._tokens = self._tokeniser.get_tokens()
+
+    def _write_tokens(self):
+        """Writes the tokens"""
+        with open(self._outdic["tokens"], "w+") as tokfile:
+            tokfile.write("<tokens>\n")
+            for tok in self._tokens:
+                tokfile.write(build_terminal(tok))
+            tokfile.write("</tokens>\n")
+
+    def _print_conditional(self, string, col):
+        """Prints messages dependent on verbosity"""
+        if self.verbosity == "minimal":
+            return
+        print("\t" + COLOR[col] + string)
