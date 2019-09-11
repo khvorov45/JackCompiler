@@ -61,6 +61,10 @@ class JackCompiler:
             raise ValueError("outtokens should be boolean")
         self._outtokens = outtokens
 
+    def get_outdic(self):
+        """Returns the output file dictionary"""
+        return self._outdic
+
     def run(self):
         """Compiles one .jack file"""
         if self.jackpath is None:
@@ -75,6 +79,7 @@ class JackCompiler:
                 "yellow"
             )
             self._write_tokens()
+        print(COLOR["yellow"] + "Finished")
 
     def _tokenise(self):
         """Creates tokens"""

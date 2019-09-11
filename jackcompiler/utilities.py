@@ -69,10 +69,12 @@ def build_terminal(tok):
         str(tok["value"]) + " " + "</" + tok["type"] + ">\n"
     return terminal
 
-
 def qte(lne):
     """Quotes the given string"""
     return "'" + lne + "'"
+
+
+
 
 def run(args):
     """Runs the compiler
