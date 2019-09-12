@@ -3,9 +3,14 @@ Does not have a huge amount of error checking, will likely only work with
 correctly written .jack classes.
 """
 
-from .utilities import UnexpectedToken, build_terminal
+from .utilities import build_terminal
 from .glossary import is_term, is_op, KEYWORD_CONSTANTS, UNARY_OP, OPER, SEGMENT
 from .symboltable import SymbolTable
+
+class UnexpectedToken(Exception):
+    """Exception raised for unexpected tokens in input"""
+    def __init__(self, tok):
+        super().__init__("unexpected token: " + tok.token)
 
 class CompilationEngine():
     """Controls compilation
@@ -24,9 +29,8 @@ class CompilationEngine():
         self._symbol_table = SymbolTable()
         self._tab_char = "  "
         self._tab_level = 1
-        self.class_name = ""
-        self.counts = {"while": 0, "if": 0}
-        self.compile_class()
+        self._class_name = ""
+        self._loop_counts = {"while": 0, "if": 0}
 
     @property
     def tokens(self):
@@ -65,7 +69,7 @@ class CompilationEngine():
         # Second token is the class name. These do not go into the symbol table.
         if self.tokens[self._cur_ind]["type"] != "identifier":
             raise UnexpectedToken(self.tokens[self._cur_ind])
-        self.class_name = self.tokens[self._cur_ind].token
+        self._class_name = self.tokens[self._cur_ind].token
         self._append_xml_terminal()
 
         # Opening '{'
@@ -76,7 +80,7 @@ class CompilationEngine():
             self.compile_class_var_dec()
 
         # Print the symbol table
-        print(self.class_name + " SYMBOL TABLE")
+        print(self._class_name + " SYMBOL TABLE")
         self._symbol_table.print(sub=False)
 
         # Subroutines
@@ -146,8 +150,8 @@ class CompilationEngine():
         self._symbol_table.start_subroutine()
 
         # This reset is unnecessary, it is to conform to ECS's compiler
-        self.counts["while"] = 0
-        self.counts["if"] = 0
+        self._loop_counts["while"] = 0
+        self._loop_counts["if"] = 0
 
         # Subroutine type
         subroutine_type = self.tokens[self._cur_ind].token
@@ -181,7 +185,7 @@ class CompilationEngine():
             self.compile_var_dec()
 
         # Label the subroutine
-        self._vmcode += "function " + self.class_name + "." + subroutine_name + \
+        self._vmcode += "function " + self._class_name + "." + subroutine_name + \
             " " + str(self._symbol_table.var_count("var")) + "\n"
 
         # Possibly required extra stuff
@@ -370,8 +374,8 @@ class CompilationEngine():
         """
 
         # Remember this index and increment immediately
-        this_ind = self.counts["while"]
-        self.counts["while"] += 1
+        this_ind = self._loop_counts["while"]
+        self._loop_counts["while"] += 1
 
         # Open up
         self._xml_tree += self._tab_level * self.tab_char + "<whileStatement>\n"
@@ -438,8 +442,8 @@ class CompilationEngine():
         """
 
         # Remember this index and increment immediately
-        this_ind = self.counts["if"]
-        self.counts["if"] += 1
+        this_ind = self._loop_counts["if"]
+        self._loop_counts["if"] += 1
 
         # Open up
         self._xml_tree += self._tab_level * self.tab_char + "<ifStatement>\n"
@@ -625,7 +629,7 @@ class CompilationEngine():
         ## I guess if there isn't then it's a method
         else:
             self._vmcode += "push pointer 0\n"
-            smth_nme = self.class_name + "." + smth_nme
+            smth_nme = self._class_name + "." + smth_nme
             add_arg = 1
 
         self._append_xml_terminal() # (
