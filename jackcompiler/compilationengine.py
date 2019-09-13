@@ -12,39 +12,36 @@ class UnexpectedToken(Exception):
     def __init__(self, tok):
         super().__init__("unexpected token: " + tok.token)
 
-class CompilationEngine():
-    """Controls compilation
-
-    Arguments:
-        self.tokens -- list of tokens (TokenInfo class).
-            Should represent one class.
-        out_file_path -- path to the file to write translation to
-    """
-    # pylint: disable=too-many-instance-attributes
+class Vmtranslator():
+    """Creates VM code"""
     def __init__(self):
-        self._tokens = None
-        self._cur_ind = None
-        self._xml_tree = None
+        self._class_name = None
         self._vmcode = None
-        self._symbol_table = SymbolTable()
-        self._tab_char = "  "
-        self._tab_level = 1
-        self._class_name = ""
-        self._loop_counts = {"while": 0, "if": 0}
+        self._loop_counts = None
 
     @property
-    def tokens(self):
-        """A list of tokens"""
-        return self._tokens
+    def class_name(self):
+        """Name of the current class"""
+        return self._class_name
 
-    @tokens.setter
-    def tokens(self, toks):
-        if not isinstance(toks, list):
-            raise TypeError("tokens should be a list")
-        self._tokens = toks
-        self._cur_ind = 0
-        self._xml_tree = ""
+    @class_name.setter
+    def class_name(self, nme):
+        if not isinstance(nme, str):
+            raise TypeError("class_name should be a string")
+        self._class_name = nme
         self._vmcode = ""
+        self._loop_counts = {"while": 0, "if": 0}
+
+    def get_vmcode(self):
+        """Returns the VM code"""
+        return self._vmcode
+
+class Xmltranslator():
+    """Creates the xml tree"""
+    def __init__(self):
+        self._xml_tree = ""
+        self._tab_char = "  "
+        self._tab_level = 0
 
     @property
     def tab_char(self):
@@ -57,87 +54,131 @@ class CompilationEngine():
             raise TypeError("tab_char should be a string")
         self._tab_char = string
 
+    def get_xml_tree(self):
+        """Returns the xml tree"""
+        return self._xml_tree
+
+    def open_section(self, secname):
+        """Opens a section"""
+        self._xml_tree += "<" + secname + ">\n"
+        self._tab_level += 1
+
+    def close_section(self, secname):
+        """Closes a section"""
+        self._tab_level -= 1
+        self._xml_tree += "</" + secname + ">\n"
+
+    def append_terminal(self, tok):
+        """Creates a string for xml writing"""
+        self._xml_tree += self._tab_level * self.tab_char + build_terminal(tok)
+
+class CompilationEngine():
+    """Controls compilation
+
+    Arguments:
+        self.tokens -- list of tokens (TokenInfo class).
+            Should represent one class.
+        out_file_path -- path to the file to write translation to
+    """
+    def __init__(self):
+        self._tokens = None
+        self._cur_ind = None
+        self._compiled = None
+        self._symbol_table = SymbolTable()
+        self._xmltranslator = Xmltranslator()
+        self._vmtranslator = Vmtranslator()
+
+    @property
+    def tokens(self):
+        """A list of tokens"""
+        return self._tokens
+
+    @tokens.setter
+    def tokens(self, toks):
+        if not isinstance(toks, list):
+            raise TypeError("tokens should be a list")
+        self._tokens = toks
+        self._cur_ind = 0
+        self._compiled = False
+
+    def get_xml_tree(self):
+        """Returns the xml tree"""
+        if not self._compiled:
+            self.compile_class()
+        return self._xmltranslator.get_xml_tree()
+
+    def get_vmcode(self):
+        """Returns the VM code"""
+        if not self._compiled:
+            self.compile_class()
+        return self._vmtranslator.get_vmcode()
+
+    def _append_xml_terminal(self):
+        """Appends a terminal"""
+        self._xmltranslator.append_terminal(self.tokens[self._cur_ind])
+        self._cur_ind += 1
+
+    def _process_token(self, check=None, ideal=None):
+        """Checks that the token is appropriate and appends it"""
+        if (check is not None) and (ideal is not None):
+            if not isinstance(ideal, list):
+                ideal = [ideal]
+            if self.tokens[self._cur_ind][check] not in ideal:
+                raise UnexpectedToken(self.tokens[self._cur_ind])
+        self._append_xml_terminal()
+
     def compile_class(self):
         """Compiles the entire class"""
 
-        # First token is 'class'
-        if self.tokens[self._cur_ind]["value"] != "class":
-            raise UnexpectedToken(self.tokens[self._cur_ind])
-        self._xml_tree += "<class>\n"
-        self._append_xml_terminal()
+        self._xmltranslator.open_section("class")
 
-        # Second token is the class name. These do not go into the symbol table.
-        if self.tokens[self._cur_ind]["type"] != "identifier":
-            raise UnexpectedToken(self.tokens[self._cur_ind])
-        self._class_name = self.tokens[self._cur_ind].token
-        self._append_xml_terminal()
-
-        # Opening '{'
-        self._append_xml_terminal()
+        # The first three tokens
+        self._process_token("value", "class")
+        self._vmtranslator.class_name = self.tokens[self._cur_ind]["value"]
+        self._process_token("type", "identifier")
+        self._process_token("value", "{")
 
         # Class variables
         while self.tokens[self._cur_ind]["value"] in ["static", "field"]:
-            self.compile_class_var_dec()
-
-        # Print the symbol table
-        print(self._class_name + " SYMBOL TABLE")
-        self._symbol_table.print(sub=False)
+            self._compile_class_var_dec()
 
         # Subroutines
-        while self.tokens[self._cur_ind].token in \
+        while self.tokens[self._cur_ind]["value"] in \
             ["constructor", "function", "method"]:
             self.compile_subroutine()
 
         # Closing '}'
-        self._append_xml_terminal()
+        self._process_token("value", "}")
 
         # Finish up the class
-        self._xml_tree += "</class>\n"
+        self._xmltranslator.close_section("class")
+        self._compiled = True
 
-        # Write xml to translation file
-        out_file = open(self.out_file_path, "w+")
-        out_file.write(self._xml_tree)
-        out_file.close()
-
-        # Write VM
-        vm_file = self.out_file_path.replace(".xml", ".vm")
-        out_file = open(vm_file, "w+")
-        out_file.write(self._vmcode)
-        out_file.close()
-
-    def compile_class_var_dec(self):
+    def _compile_class_var_dec(self):
         """Compiles class variable declarations"""
 
-        # Open up
-        self._xml_tree += self._tab_level * self.tab_char + "<classVarDec>\n"
-        self._tab_level += 1
+        self._xmltranslator.open_section("classVarDec")
 
         # All of these should be in the symbol table
 
-        # 'static' or 'field'
-        self._append_xml_terminal(increment=False)
-        knd = self.tokens[self._cur_ind].token
-        self._cur_ind += 1
+        # Variable kind (static or field)
+        knd = self.tokens[self._cur_ind]["value"]
+        self._process_token("value", ["static", "field"])
 
-        # type
-        self._append_xml_terminal(increment=False)
+        # Variable type
         tpe = self.tokens[self._cur_ind].token
-        self._cur_ind += 1
+        self._process_token("type", ["keyword", "identifier"])
 
-        # name(s)
-        while self.tokens[self._cur_ind].token != ";":
-            self._append_xml_terminal(increment=False)
+        # Variable name(s)
+        while self.tokens[self._cur_ind]["value"] != ";":
             nme = self.tokens[self._cur_ind].token
-            self._cur_ind += 1
+            self._process_token("type", "identifier")
             self._symbol_table.define(nme, tpe, knd)
-            if self.tokens[self._cur_ind].token == ",":
-                self._append_xml_terminal()
+            if self.tokens[self._cur_ind]["value"] == ",":
+                self._process_token()
 
-        self._append_xml_terminal() # ;
-
-        # Close down
-        self._tab_level -= 1
-        self._xml_tree += self._tab_level * self.tab_char + "</classVarDec>\n"
+        self._process_token("value", ";")
+        self._xmltranslator.close_section("classVarDec")
 
     def compile_subroutine(self):
         """Compiles a subroutine"""
@@ -639,12 +680,7 @@ class CompilationEngine():
         # Write the VM code
         self._vmcode += "call " + smth_nme + " " + str(exp_n) + "\n"
 
-    def _append_xml_terminal(self, increment=True):
-        """Creates a string for xml writing"""
-        self._xml_tree += self._tab_level * self.tab_char + \
-            build_terminal(self.tokens[self._cur_ind])
-        if increment:
-            self._cur_ind += 1
+    
 
     def resolve_symbol(self, smth_name):
         """Resolves a symbol (eg. replaces variable name with class name"""
