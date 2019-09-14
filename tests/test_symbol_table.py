@@ -5,6 +5,7 @@ from jackcompiler.symboltable import SymbolTable
 def test_symbol_table():
     """Tests symbol table"""
     symt = SymbolTable()
+    symt.subroutine_type = "function"
     symt.define("var1stat", "int", "static")
     symt.define("var2stat", "int", "static")
     symt.define("var3stat", "int", "static")

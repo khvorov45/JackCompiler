@@ -22,7 +22,9 @@ def run_cmd(system_arguments):
     opt_dic = {
         "-v": Cmdent("verbosity"), # leave to JackCompiler to check correctness
         "-d": Cmdent("maxdepth", range(-1, 10^6)),
-        "-tok": Cmdent("outtokens", "bool")
+        "-tok": Cmdent("outtokens", "bool"),
+        "-tree": Cmdent("outtree", "bool"),
+        "-novm": Cmdent("novm", "bool"),
     }
 
     cmd = CmdParser(system_arguments, opt_dic)
@@ -37,6 +39,8 @@ def run_cmd(system_arguments):
     comp = JackCompiler()
     comp.verbosity = opts["verbosity"]
     comp.outtokens = opts["outtokens"]
+    comp.outtree = opts["outtree"]
+    comp.outvm = not opts["novm"]
     for path in paths:
         comp.jackpath = path
         comp.run()

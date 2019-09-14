@@ -14,15 +14,26 @@ class SymbolTable:
         self._class_scope = []
         self._class_static_ind = 0
         self._class_field_ind = 0
-        self._subroutine_scope = []
-        self._subroutine_arg_ind = 0
-        self._subroutine_var_ind = 0
+        self._subroutine_scope = None
+        self._subroutine_arg_ind = None
+        self._subroutine_var_ind = None
+        self._subroutine_type = None
 
-    def start_subroutine(self):
-        """Starts a new subroutine (resets subroutine scope)"""
+    @property
+    def subroutine_type(self):
+        """Type of subroutine"""
+        return self._subroutine_type
+
+    @subroutine_type.setter
+    def subroutine_type(self, newtype):
+        if not isinstance(newtype, str):
+            raise TypeError("newtype should be a string")
+        self._subroutine_type = newtype
         self._subroutine_scope = []
         self._subroutine_arg_ind = 0
         self._subroutine_var_ind = 0
+        if newtype == "method":
+            self._subroutine_arg_ind += 1
 
     def define(self, iden_name, iden_type, iden_kind):
         """Defines a new identifier of a given name, type and kind.
@@ -116,3 +127,13 @@ class SymbolTable:
                 iden["name"], iden["type"], iden["kind"], iden["index"]
             )
             print(row)
+
+    def resolve_symbol(self, smth_name):
+        """Resolves a symbol (eg. replaces variable name with class name)"""
+        for iden in self._subroutine_scope:
+            if iden["name"] == smth_name:
+                return iden["type"]
+        for iden in self._class_scope:
+            if iden["name"] == smth_name:
+                return iden["type"]
+        return smth_name

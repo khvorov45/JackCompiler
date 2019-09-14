@@ -23,7 +23,7 @@ SYMBOLS = [
     "+", "-", "*", "/",
     "&", "|",
     "<", ">",
-    "=", 
+    "=",
     "~"
 ]
 
@@ -38,7 +38,7 @@ UNARY_OP = {"-": "neg\n", "~": "not\n"}
 OPER = {
     "+": "add\n", "-" : "sub\n",
     "*": "call Math.multiply 2\n", "/": "call Math.divide 2\n",
-    "&": "and\n", "|": "or\n", "<": "lt\n", ">": "gt\n", "=": "eq\n"
+    "&amp;": "and\n", "|": "or\n", "&lt;": "lt\n", "&gt;": "gt\n", "=": "eq\n"
 }
 SEGMENT = {
     "var": "local", "arg": "argument", "static": "static", "field": "this"
@@ -46,19 +46,19 @@ SEGMENT = {
 
 def is_op(tok):
     """Determines if the token is a an operator"""
-    if tok.token in OPER.keys():
+    if tok["value"] in OPER.keys():
         return True
     return False
 
 def is_term(tok):
     """Determines if the token represents a term"""
-    if tok.token in KEYWORD_CONSTANTS.keys():
+    if tok["value"] in KEYWORD_CONSTANTS.keys():
         return True
     some_term_types = ["integerConstant", "stringConstant", "identifier"]
-    if tok.toktype in some_term_types:
+    if tok["type"] in some_term_types:
         return True
-    if tok.token == "(":
+    if tok["value"] == "(":
         return True
-    if tok.token in UNARY_OP.keys():
+    if tok["value"] in UNARY_OP.keys():
         return True
     return False
