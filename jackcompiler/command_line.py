@@ -29,7 +29,7 @@ def run_cmd(system_arguments):
     """
 
     opt_dic = {
-        "-v": Cmdent("verbosity"), # leave to JackCompiler to check correctness
+        "-v": Cmdent("verbosity", ["minimal", "full"]),
         "-d": Cmdent("maxdepth", range(-1, 10^6)),
         "-tok": Cmdent("outtokens", "bool"),
         "-tree": Cmdent("outtree", "bool"),

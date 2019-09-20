@@ -4,6 +4,7 @@ import os
 import re
 from jackcompiler.compiler import JackCompiler
 from jackcompiler.utilities import list_files_with_ext, COLOR
+from jackcompiler.command_line import run_cmd
 
 def compare_files(outdic):
     """Compares files"""
@@ -52,3 +53,7 @@ def test_vm_generation():
         comp.jackpath = jackpath
         comp.run()
         compare_files(comp.get_outdic())
+
+def test_cmd_usage():
+    """Tests usage from command line"""
+    run_cmd(["jackcompiler", "vmcode/Average"])

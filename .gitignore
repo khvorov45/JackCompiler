@@ -5,3 +5,4 @@ __pycache__
 *.sh
 *.ps1
 .pytest_cache
+temprun.py

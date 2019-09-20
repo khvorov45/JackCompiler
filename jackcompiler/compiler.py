@@ -93,6 +93,9 @@ class JackCompiler:
         if self.jackpath is None:
             print(COLOR["red"] + "Nothing to compile")
             return
+        if self._contents == "":
+            print(COLOR["red"] + "empty file")
+            return
         print(COLOR["yellow"] + "Compiling %s" % self.jackpath)
         self._tokeniser.contents = self._contents
         toks = self._tokeniser.get_tokens()
