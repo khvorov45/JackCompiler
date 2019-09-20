@@ -25,5 +25,9 @@ setuptools.setup(
     install_requires=[
         "colorama",
         "cmdparserkhv"
-    ]
+    ],
+    dependency_links=["https://github.com/khvorov45/cmdparserkhv"],
+    entry_points={
+        "console_scripts": ["jackcompiler=jackcompiler.command_line:main"]
+    }
 )

@@ -1,11 +1,12 @@
 """Functions related to executing the compilation from the command line"""
 
+import sys
 from cmdparserkhv import CmdParser, Cmdent
 
 from .utilities import list_files_with_ext
 from .compiler import JackCompiler
 
-def run_cmd(system_arguments):
+def main():
     """Runs the compiler given system arguments.
 
     Expected structure:
@@ -18,6 +19,8 @@ def run_cmd(system_arguments):
         -v: verbosity indicator.
         -d: maximum recursion depth for traversing the directory.
     """
+
+    system_arguments = sys.argv
 
     opt_dic = {
         "-v": Cmdent("verbosity"), # leave to JackCompiler to check correctness

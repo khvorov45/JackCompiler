@@ -2,7 +2,7 @@
 
 ## Compiler usage
 
-`python python run.py path/to/jack verbosity`
+`python run.py path/to/jack verbosity`
 
 verbosity: full | minimal
 
